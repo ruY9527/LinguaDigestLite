@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir *)",
+      "Bash(xcodebuild *)",
+      "Bash(sudo *)",
+      "Bash(swift *)",
+      "Bash(ls *)",
+      "Bash(rm *)",
+      "Bash(swiftc *)",
+      "Bash(xcrun *)",
+      "Bash(xargs *)",
+      "Bash(do *)",
+      "Bash(done)",
+      "Bash(sed *)",
+      "Bash(find *)",
+      "Bash(od *)",
+      "Bash(python3)",
+      "Bash(import *)",
+      "Bash(file_path *)",
+      "Bash(with)",
+      "Bash(as *)",
+      "Bash(content *)",
+      "Bash(old_pattern *)",
+      "Bash(new_code *)",
+      "Bash(old_text *)",
+      "Bash(old_text, *)",
+      "Bash(f.write)",
+      "Bash(print)",
+      "Bash(eof)",
+      "Bash(grep *)",
+      "Bash(git init)",
+      "Bash(git add *)"
+    ]
+  },
+  "$version": 3
+}

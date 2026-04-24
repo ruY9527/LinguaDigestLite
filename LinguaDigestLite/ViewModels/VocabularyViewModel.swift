@@ -1,0 +1,271 @@
+//
+//  VocabularyViewModel.swift
+//  LinguaDigestLite
+//
+//  Created for LinguaDigestLite
+//
+
+import Foundation
+import Combine
+
+/// 生词本ViewModel
+class VocabularyViewModel: ObservableObject {
+    @Published var vocabulary: [Vocabulary] = []
+    @Published var todayReviewWords: [Vocabulary] = []
+    @Published var categories: [VocabularyCategory] = []
+    @Published var selectedCategory: VocabularyCategory?
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
+    @Published var showingReviewMode: Bool = false
+    @Published var showingCategoryManagement: Bool = false
+    @Published var currentReviewWord: Vocabulary?
+    @Published var reviewCompletedCount: Int = 0
+
+    private let databaseManager = DatabaseManager.shared
+    private let dictionaryService = DictionaryService.shared
+    private let speechService = SpeechService.shared
+    private var cancellables = Set<AnyCancellable>()
+
+    init() {
+        loadCategories()
+        loadVocabulary()
+    }
+
+    /// 加载分类
+    func loadCategories() {
+        categories = databaseManager.fetchAllCategories()
+        // 如果当前选中的分类不在列表中，或者没有选中，默认选中"全部"
+        if selectedCategory == nil || !categories.contains(where: { $0.id == selectedCategory?.id }) {
+            selectedCategory = categories.first { $0.name == "全部" }
+        }
+    }
+
+    /// 加载所有生词
+    func loadVocabulary() {
+        let categoryId = selectedCategory?.name == "全部" ? nil : selectedCategory?.id
+        vocabulary = databaseManager.fetchVocabulary(for: categoryId)
+        backfillVocabularyDefinitionsIfNeeded()
+        todayReviewWords = databaseManager.fetchTodayReviewVocabulary(for: categoryId)
+    }
+
+    /// 选择分类
+    func selectCategory(_ category: VocabularyCategory) {
+        selectedCategory = category
+        loadVocabulary()
+    }
+
+    /// 添加分类
+    func addCategory(name: String, description: String?, color: String, icon: String) {
+        let category = VocabularyCategory(
+            name: name,
+            description: description,
+            color: color,
+            icon: icon,
+            isDefault: false
+        )
+        print("📝 Creating category: \(name)")
+        databaseManager.addCategory(category)
+        loadCategories()
+        print("📋 Categories after add: \(categories.map { $0.name })")
+    }
+
+    /// 更新分类
+    func updateCategory(_ category: VocabularyCategory) {
+        databaseManager.updateCategory(category)
+        loadCategories()
+    }
+
+    /// 删除分类
+    func deleteCategory(_ category: VocabularyCategory) {
+        databaseManager.deleteCategory(category)
+        loadCategories()
+        // 如果删除的是当前选中的分类，切换到全部
+        if selectedCategory?.id == category.id {
+            selectedCategory = categories.first { $0.name == "全部" }
+            loadVocabulary()
+        }
+    }
+
+    /// 添加生词
+    func addVocabulary(word: String, definition: String? = nil, phonetic: String? = nil, partOfSpeech: String? = nil, context: String? = nil, articleId: UUID? = nil, categoryId: UUID? = nil) {
+        let vocab = Vocabulary(
+            word: word,
+            definition: definition,
+            phonetic: phonetic,
+            partOfSpeech: partOfSpeech,
+            exampleSentence: nil,
+            articleId: articleId,
+            categoryId: categoryId,
+            contextSnippet: context
+        )
+
+        databaseManager.addVocabulary(vocab)
+        loadVocabulary()
+    }
+
+    /// 更新生词分类
+    func updateVocabularyCategory(_ vocab: Vocabulary, categoryId: UUID?) {
+        databaseManager.updateVocabularyCategory(vocab, categoryId: categoryId)
+        loadVocabulary()
+    }
+
+    /// 删除生词
+    func deleteVocabulary(_ vocab: Vocabulary) {
+        databaseManager.deleteVocabulary(vocab)
+        loadVocabulary()
+    }
+
+    /// 搜索生词
+    func searchVocabulary(_ word: String) -> Vocabulary? {
+        return vocabulary.first { $0.word.lowercased() == word.lowercased() }
+    }
+
+    /// 检查单词是否在生词本中
+    func isInVocabulary(_ word: String) -> Bool {
+        return vocabulary.contains { $0.word.lowercased() == word.lowercased() }
+    }
+
+    /// 开始今日复习
+    func startReview() {
+        showingReviewMode = true
+        reviewCompletedCount = 0
+
+        if todayReviewWords.isEmpty {
+            // 没有待复习的单词
+            showingReviewMode = false
+        } else {
+            currentReviewWord = todayReviewWords.first
+        }
+    }
+
+    /// 完成当前单词复习
+    /// - Parameter quality: 复习质量评分 (0-5)
+    func completeCurrentReview(quality: Int) {
+        guard let word = currentReviewWord else { return }
+
+        var updatedWord = word
+        updatedWord.updateReview(quality: quality)
+
+        databaseManager.updateVocabulary(updatedWord)
+
+        // 移到下一个单词
+        reviewCompletedCount += 1
+
+        if reviewCompletedCount < todayReviewWords.count {
+            currentReviewWord = todayReviewWords[reviewCompletedCount]
+        } else {
+            // 所有单词复习完成
+            showingReviewMode = false
+            currentReviewWord = nil
+            loadVocabulary()
+        }
+    }
+
+    /// 跳过当前单词
+    func skipCurrentReview() {
+        reviewCompletedCount += 1
+
+        if reviewCompletedCount < todayReviewWords.count {
+            currentReviewWord = todayReviewWords[reviewCompletedCount]
+        } else {
+            showingReviewMode = false
+            currentReviewWord = nil
+            loadVocabulary()
+        }
+    }
+
+    /// 结束复习
+    func endReview() {
+        showingReviewMode = false
+        currentReviewWord = nil
+        loadVocabulary()
+    }
+
+    /// 朗读单词
+    func speakWord(_ word: String) {
+        speechService.speakWord(word)
+    }
+
+    /// 生词总数
+    var totalVocabularyCount: Int {
+        vocabulary.count
+    }
+
+    /// 已掌握生词数量
+    var masteredVocabularyCount: Int {
+        vocabulary.filter { $0.masteredLevel >= 4 }.count
+    }
+
+    /// 今日待复习数量
+    var todayReviewCount: Int {
+        todayReviewWords.count
+    }
+
+    /// 学习进度百分比
+    var learningProgress: Double {
+        if vocabulary.isEmpty { return 0 }
+        return Double(masteredVocabularyCount) / Double(vocabulary.count)
+    }
+
+    /// 获取分类的生词数量
+    func vocabularyCountForCategory(_ category: VocabularyCategory) -> Int {
+        if category.name == "全部" {
+            return databaseManager.vocabularyCount(for: nil)
+        }
+        return databaseManager.vocabularyCount(for: category.id)
+    }
+
+    /// 获取生词统计信息
+    var statistics: VocabularyStatistics {
+        let mastered = vocabulary.filter { $0.masteredLevel >= 4 }.count
+        let learning = vocabulary.filter { $0.masteredLevel > 0 && $0.masteredLevel < 4 }.count
+        let new = vocabulary.filter { $0.masteredLevel == 0 }.count
+
+        return VocabularyStatistics(
+            total: vocabulary.count,
+            mastered: mastered,
+            learning: learning,
+            new: new,
+            reviewToday: todayReviewCount
+        )
+    }
+
+    /// 为历史数据补全缺失的释义，避免生词本点击后无内容可展示。
+    private func backfillVocabularyDefinitionsIfNeeded() {
+        var hasUpdates = false
+
+        for index in vocabulary.indices {
+            if vocabulary[index].definition?.isEmpty ?? true,
+               let definition = dictionaryService.getDefinition(for: vocabulary[index].word),
+               !definition.isEmpty {
+                vocabulary[index].definition = definition
+                hasUpdates = true
+            }
+
+            if vocabulary[index].partOfSpeech?.isEmpty ?? true,
+               let partOfSpeech = dictionaryService.getPartOfSpeechFromDictionary(for: vocabulary[index].word) {
+                vocabulary[index].partOfSpeech = partOfSpeech
+                hasUpdates = true
+            }
+        }
+
+        if hasUpdates {
+            for item in vocabulary {
+                databaseManager.updateVocabulary(item)
+            }
+        }
+    }
+}
+
+/// 生词统计信息
+struct VocabularyStatistics {
+    var total: Int
+    var mastered: Int
+    var learning: Int
+    var new: Int
+    var reviewToday: Int
+
+    var description: String {
+        "共\(total)词，已掌握\(mastered)，学习中\(learning)，待学习\(new)，今日复习\(reviewToday)"
+    }
+}
