@@ -173,3 +173,6 @@ Temporary Items
 
 # Project specific
 *.generated.swift
+
+# Downloaded files
+download/

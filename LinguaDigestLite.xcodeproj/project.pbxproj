@@ -27,6 +27,14 @@
 		A1000017 /* VocabularyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000017; };
 		A1000019 /* VocabularyCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000020; };
 		A1000020 /* ReaderViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000021; };
+
+		74669B16947CCE2A92F0BD69 /* TranslationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516F0788A9C6B3B5AB0F8316 /* TranslationService.swift */; };
+		B2D0B39EAEE53CCDBF24756 /* DictionaryImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F19285151B423B65B76402 /* DictionaryImportService.swift */; };
+		0E1B995485C170F8F5145E3 /* DictionaryDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ED5E3F4B02127A46B65E8E8 /* DictionaryDownloadService.swift */; };
+		7C125E53C4171059E7E05A1 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D353280496F1BE7EB1C13C8B /* NotificationService.swift */; };
+		A91C7CCFC5784F81AFE9262 /* DictionaryDatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F94AC4BB654CD18FB32EF9 /* DictionaryDatabaseManager.swift */; };
+		AA1B2C3D4E5F6A7B8C9D0E1F /* DictionaryEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB2C3D4E5F6A7B8C9D0E1F2A /* DictionaryEntry.swift */; };
+		CC2D0E1F2A3B4C5D6E7F8A9B /* ecdict.db in Resources */ = {isa = PBXBuildFile; fileRef = CC1D0E1F2A3B4C5D6E7F8A9B /* ecdict.db */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,6 +60,14 @@
 		A2000018 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A2000021 /* ReaderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderViewModel.swift; sourceTree = "<group>"; };
 		A3000001 /* LinguaDigestLite.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LinguaDigestLite.app; sourceTree = BUILT_PRODUCTS_DIR; };
+
+		516F0788A9C6B3B5AB0F8316 /* TranslationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationService.swift; sourceTree = "<group>"; };
+		C9F19285151B423B65B76402 /* DictionaryImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryImportService.swift; sourceTree = "<group>"; };
+		0ED5E3F4B02127A46B65E8E8 /* DictionaryDownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryDownloadService.swift; sourceTree = "<group>"; };
+		D353280496F1BE7EB1C13C8B /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		D0F94AC4BB654CD18FB32EF9 /* DictionaryDatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryDatabaseManager.swift; sourceTree = "<group>"; };
+		BB2C3D4E5F6A7B8C9D0E1F2A /* DictionaryEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryEntry.swift; sourceTree = "<group>"; };
+		CC1D0E1F2A3B4C5D6E7F8A9B /* ecdict.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = ecdict.db; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,6 +120,7 @@
 				A2000009 /* Vocabulary.swift */,
 				A2000020 /* VocabularyCategory.swift */,
 				A2000010 /* ReadingSettings.swift */,
+				BB2C3D4E5F6A7B8C9D0E1F2A /* DictionaryEntry.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -139,6 +156,11 @@
 				A2000012 /* FeedService.swift */,
 				A2000013 /* DictionaryService.swift */,
 				A2000014 /* SpeechService.swift */,
+				516F0788A9C6B3B5AB0F8316 /* TranslationService.swift */,
+				C9F19285151B423B65B76402 /* DictionaryImportService.swift */,
+				0ED5E3F4B02127A46B65E8E8 /* DictionaryDownloadService.swift */,
+				D353280496F1BE7EB1C13C8B /* NotificationService.swift */,
+				D0F94AC4BB654CD18FB32EF9 /* DictionaryDatabaseManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -153,6 +175,7 @@
 		A5000009 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				CC1D0E1F2A3B4C5D6E7F8A9B /* ecdict.db */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -215,6 +238,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CC2D0E1F2A3B4C5D6E7F8A9B /* ecdict.db in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -245,6 +269,12 @@
 				A1000016 /* ArticleViewModel.swift in Sources */,
 				A1000017 /* VocabularyViewModel.swift in Sources */,
 				A1000020 /* ReaderViewModel.swift in Sources */,
+				74669B16947CCE2A92F0BD69 /* TranslationService.swift in Sources */,
+				B2D0B39EAEE53CCDBF24756 /* DictionaryImportService.swift in Sources */,
+				0E1B995485C170F8F5145E3 /* DictionaryDownloadService.swift in Sources */,
+				7C125E53C4171059E7E05A1 /* NotificationService.swift in Sources */,
+				A91C7CCFC5784F81AFE9262 /* DictionaryDatabaseManager.swift in Sources */,
+				AA1B2C3D4E5F6A7B8C9D0E1F /* DictionaryEntry.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

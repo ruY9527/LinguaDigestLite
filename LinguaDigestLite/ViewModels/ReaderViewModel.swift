@@ -36,16 +36,28 @@ class ReaderViewModel: ObservableObject {
     @Published var wordAnalysis: WordAnalysis?
     @Published var selectedCategoryForWord: VocabularyCategory?
     @Published var categories: [VocabularyCategory] = []
+    @Published var selectedWordGroupedDefinitions: [(pos: String, definitions: [String])] = []
+    
+    // 句子翻译相关
+    @Published var showingSentenceTranslation: Bool = false
+    @Published var selectedSentence: String?
+    @Published var selectedSentenceRange: NSRange?
+    @Published var showingTranslationMenu: Bool = false
+    @Published var availableTranslationServices: [TranslationServiceType] = []
 
     private let databaseManager = DatabaseManager.shared
     private let feedService = FeedService.shared
     private let dictionaryService = DictionaryService.shared
+    private let translationService = TranslationService.shared
     private let speechSynthesizer = AVSpeechSynthesizer()
     private var cancellables = Set<AnyCancellable>()
 
     init(article: Article) {
         self.article = article
         self.isFavorite = article.isFavorite
+        
+        // 初始化可用翻译服务列表
+        availableTranslationServices = translationService.availableTranslationServiceTypes()
 
         loadContent()
         loadCategories()
@@ -96,6 +108,11 @@ class ReaderViewModel: ObservableObject {
 
     /// 切换收藏状态
     func toggleFavorite() {
+        // 确保文章包含最新内容再收藏（快照会保存完整内容）
+        if !content.isEmpty {
+            article.content = content
+            databaseManager.updateArticle(article)
+        }
         let newFavoriteStatus = databaseManager.toggleArticleFavorite(article)
         isFavorite = newFavoriteStatus
         article.isFavorite = newFavoriteStatus
@@ -131,6 +148,15 @@ class ReaderViewModel: ObservableObject {
 
         speechSynthesizer.speak(utterance)
     }
+    
+    /// 朗读句子
+    func speakSentence(_ sentence: String) {
+        let utterance = AVSpeechUtterance(string: sentence)
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        utterance.rate = 0.45
+        
+        speechSynthesizer.speak(utterance)
+    }
 
     // MARK: - 单词查询
 
@@ -150,13 +176,16 @@ class ReaderViewModel: ObservableObject {
             selectedWordPartOfSpeech = pos
         }
 
+        // 获取按词性分组的释义（支持一词多义）
+        let grouped = dictionaryService.getGroupedDefinitions(for: word)
+        selectedWordGroupedDefinitions = grouped
+
         // 获取中文释义（优先使用离线词典）
         let definitions = dictionaryService.getDefinitions(for: word)
         if !definitions.isEmpty {
             selectedWordDefinitions = definitions
             selectedWordDefinition = definitions.joined(separator: "；")
         } else if dictionaryService.hasSystemDefinition(for: word) {
-            // 如果离线词典没有，但系统词典有，提示用户可查看系统词典
             selectedWordDefinitions = []
             selectedWordDefinition = "点击下方「打开原文」可使用系统词典查看详细释义"
         } else {
@@ -167,9 +196,10 @@ class ReaderViewModel: ObservableObject {
         // 获取上下文（从文章中查找）
         selectedWordContext = extractContextForWord(word)
 
-        let hasSystemDefinition = dictionaryService.hasSystemDefinition(for: word)
-        showingSystemDictionarySheet = hasSystemDefinition
-        showingWordDefinition = !hasSystemDefinition
+        // 优先展示 ECDICT 离线释义悬浮卡片；仅当离线词典无结果时回退到系统词典
+        let hasOfflineDefinitions = !definitions.isEmpty
+        showingWordDefinition = hasOfflineDefinitions
+        showingSystemDictionarySheet = !hasOfflineDefinitions && dictionaryService.hasSystemDefinition(for: word)
     }
 
     /// 关闭单词定义卡片
@@ -179,10 +209,58 @@ class ReaderViewModel: ObservableObject {
         selectedWord = nil
         selectedWordDefinition = nil
         selectedWordDefinitions = []
+        selectedWordGroupedDefinitions = []
         selectedWordPartOfSpeech = nil
         selectedWordContext = nil
         wordAnalysis = nil
         selectedCategoryForWord = nil
+    }
+    
+    // MARK: - 句子翻译
+    
+    /// 选择句子进行翻译
+    func selectSentenceForTranslation(_ sentence: String, range: NSRange? = nil) {
+        let trimmedSentence = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedSentence.count >= 5 else { return }
+        
+        selectedSentence = trimmedSentence
+        selectedSentenceRange = range
+        showingSentenceTranslation = true
+        
+        // 自动使用系统翻译
+        translateSelectedSentence()
+    }
+    
+    /// 翻译选中的句子
+    func translateSelectedSentence() {
+        guard let sentence = selectedSentence, !sentence.isEmpty else { return }
+        
+        // 使用系统翻译
+        translationService.translateWithSystemApp(text: sentence)
+    }
+    
+    /// 使用指定翻译服务翻译
+    func translateWithService(type: TranslationServiceType) {
+        guard let sentence = selectedSentence, !sentence.isEmpty else { return }
+        translationService.translate(text: sentence, serviceType: type)
+    }
+    
+    /// 获取快速翻译预览（使用词典组合）
+    func getQuickTranslationPreview() -> String? {
+        guard let sentence = selectedSentence else { return nil }
+        return translationService.quickTranslateSentence(sentence)
+    }
+    
+    /// 关闭句子翻译
+    func closeSentenceTranslation() {
+        showingSentenceTranslation = false
+        selectedSentence = nil
+        selectedSentenceRange = nil
+    }
+    
+    /// 显示翻译服务选择菜单
+    func showTranslationMenu() {
+        showingTranslationMenu = true
     }
 
     /// 从文章中提取单词上下文
@@ -221,7 +299,7 @@ class ReaderViewModel: ObservableObject {
     func addToVocabulary(word: String, context: String?, categoryId: UUID?) {
         // 获取释义（优先使用离线词典）
         var definitionToSave: String? = nil
-        
+
         // 如果当前有释义且不为空，使用它
         if let currentDef = selectedWordDefinition, !currentDef.isEmpty {
             definitionToSave = currentDef
@@ -229,7 +307,11 @@ class ReaderViewModel: ObservableObject {
             // 否则尝试从离线词典获取
             definitionToSave = dictionaryService.getDefinition(for: word)
         }
-        
+
+        // 转换分组释义为可存储格式
+        let posDefs: [PosDefinitions]? = selectedWordGroupedDefinitions.isEmpty ? nil :
+            selectedWordGroupedDefinitions.map { PosDefinitions(pos: $0.pos, definitions: $0.definitions) }
+
         let vocabulary = Vocabulary(
             word: word,
             definition: definitionToSave,
@@ -237,7 +319,8 @@ class ReaderViewModel: ObservableObject {
             exampleSentence: context,
             articleId: article.id,
             categoryId: categoryId,
-            contextSnippet: context
+            contextSnippet: context,
+            groupedDefinitions: posDefs
         )
 
         databaseManager.addVocabulary(vocabulary)

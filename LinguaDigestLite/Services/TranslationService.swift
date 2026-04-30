@@ -1,0 +1,190 @@
+//
+//  TranslationService.swift
+//  LinguaDigestLite
+//
+//  系统翻译服务 - 支持句子翻译
+//
+
+import Foundation
+import UIKit
+
+/// 翻译服务类型
+enum TranslationServiceType: String, CaseIterable {
+    case system = "系统翻译"
+    case google = "Google 翻译"
+    case baidu = "百度翻译"
+    case deepL = "DeepL 翻译"
+}
+
+/// 系统翻译服务
+class TranslationService: NSObject {
+    static let shared = TranslationService()
+    
+    /// 翻译错误类型
+    enum TranslationError: LocalizedError {
+        case translationUnavailable
+        case textTooShort
+        case networkError
+        case unknownError
+        
+        var errorDescription: String? {
+            switch self {
+            case .translationUnavailable:
+                return "系统翻译不可用"
+            case .textTooShort:
+                return "文本太短，无法翻译"
+            case .networkError:
+                return "网络错误，请检查连接"
+            case .unknownError:
+                return "翻译失败"
+            }
+        }
+    }
+    
+    private override init() {
+        super.init()
+    }
+    
+    // MARK: - 系统翻译
+    
+    /// 使用系统翻译（iOS 15+）
+    /// 调用系统翻译应用进行翻译
+    func translateWithSystemApp(text: String) {
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedText.count >= 2 else { return }
+        
+        // 使用系统翻译 URL scheme
+        let encodedText = trimmedText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? trimmedText
+        
+        // 方案1: 使用系统翻译应用
+        if let url = URL(string: "x-translate://?text=\(encodedText)&source=en&target=zh") {
+            if UIApplication.shared.canOpenURL(url) {
+                UIApplication.shared.open(url)
+                return
+            }
+        }
+        
+        // 方案2: 使用 Google 翻译作为备选
+        openGoogleTranslate(text: trimmedText)
+    }
+    
+    /// 打开 Google 翻译
+    func openGoogleTranslate(text: String) {
+        let encodedText = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? text
+        
+        // Google 翻译网页版
+        let googleTranslateURL = "https://translate.google.com/?sl=en&tl=zh-CN&text=\(encodedText)"
+        
+        if let url = URL(string: googleTranslateURL) {
+            UIApplication.shared.open(url)
+        }
+    }
+    
+    /// 打开百度翻译（备选）
+    func openBaiduTranslate(text: String) {
+        let encodedText = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? text
+        
+        let baiduTranslateURL = "https://fanyi.baidu.com/#en/zh/\(encodedText)"
+        
+        if let url = URL(string: baiduTranslateURL) {
+            UIApplication.shared.open(url)
+        }
+    }
+    
+    /// 打开 DeepL 翻译（备选）
+    func openDeepLTranslate(text: String) {
+        let encodedText = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? text
+        
+        let deepLURL = "https://www.deepl.com/translator#en/zh/\(encodedText)"
+        
+        if let url = URL(string: deepLURL) {
+            UIApplication.shared.open(url)
+        }
+    }
+    
+    /// 根据类型翻译
+    func translate(text: String, serviceType: TranslationServiceType) {
+        switch serviceType {
+        case .system:
+            translateWithSystemApp(text: text)
+        case .google:
+            openGoogleTranslate(text: text)
+        case .baidu:
+            openBaiduTranslate(text: text)
+        case .deepL:
+            openDeepLTranslate(text: text)
+        }
+    }
+    
+    // MARK: - 内置简易翻译（用于快速预览）
+    
+    /// 内置简易翻译（仅用于句子快速预览，非完整翻译）
+    /// 使用词典中的单词释义组合生成大致意思
+    func quickTranslateSentence(_ sentence: String) -> String? {
+        let dictionaryService = DictionaryService.shared
+        
+        // 分词
+        let words = sentence.split(separator: " ").map { String($0) }
+        var translations: [String] = []
+        
+        for word in words {
+            let cleanWord = word.lowercased().trimmingCharacters(in: .punctuationCharacters)
+            if let definition = dictionaryService.getDefinition(for: cleanWord) {
+                translations.append(definition)
+            }
+        }
+        
+        if translations.isEmpty {
+            return nil
+        }
+        
+        // 返回主要单词释义的组合（仅用于预览）
+        return translations.prefix(5).joined(separator: "、")
+    }
+    
+    // MARK: - 检测翻译可用性
+    
+    /// 检查系统翻译是否可用
+    func isSystemTranslationAvailable() -> Bool {
+        // iOS 15+ 系统翻译可用
+        if #available(iOS 15.0, *) {
+            return true
+        }
+        return false
+    }
+    
+    /// 获取可用的翻译服务列表
+    func availableTranslationServiceTypes() -> [TranslationServiceType] {
+        var services: [TranslationServiceType] = []
+        
+        // 系统翻译（优先）
+        if isSystemTranslationAvailable() {
+            services.append(.system)
+        }
+        
+        // 第三方翻译服务
+        services.append(contentsOf: [.google, .baidu, .deepL])
+        
+        return services
+    }
+}
+
+// MARK: - 系统翻译菜单处理
+
+extension UITextView {
+    /// 是否可以执行翻译动作
+    func canPerformActionForTranslation(_ action: Selector, withSender sender: Any?) -> Bool {
+        if action == Selector(("translateSentence")) {
+            return selectedRange.length > 0
+        }
+        return canPerformAction(action, withSender: sender)
+    }
+
+    /// 执行翻译动作
+    func performActionForTranslation(_ action: Selector, withSender sender: Any?) {
+        if action == Selector(("translateSentence")) {
+            let selectedText = (text as NSString).substring(with: selectedRange)
+            TranslationService.shared.translateWithSystemApp(text: selectedText)
+        }
+    }
+}

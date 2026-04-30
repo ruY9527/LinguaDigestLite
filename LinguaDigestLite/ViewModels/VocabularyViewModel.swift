@@ -8,6 +8,32 @@
 import Foundation
 import Combine
 
+/// 生词筛选状态类型
+enum VocabularyFilterType: String, CaseIterable {
+    case all = "总数"
+    case mastered = "已掌握"
+    case learning = "学习中"
+    case reviewToday = "待复习"
+    
+    var color: String {
+        switch self {
+        case .all: return "#007AFF"      // 蓝色
+        case .mastered: return "#34C759" // 绿色
+        case .learning: return "#FF9500" // 橙色
+        case .reviewToday: return "#FF3B30" // 红色
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .all: return "book.fill"
+        case .mastered: return "checkmark.seal.fill"
+        case .learning: return "book.pages.fill"
+        case .reviewToday: return "clock.fill"
+        }
+    }
+}
+
 /// 生词本ViewModel
 class VocabularyViewModel: ObservableObject {
     @Published var vocabulary: [Vocabulary] = []
@@ -20,6 +46,10 @@ class VocabularyViewModel: ObservableObject {
     @Published var showingCategoryManagement: Bool = false
     @Published var currentReviewWord: Vocabulary?
     @Published var reviewCompletedCount: Int = 0
+    
+    /// 筛选状态
+    @Published var filterType: VocabularyFilterType = .all
+    @Published var showingFilteredList: Bool = false
 
     private let databaseManager = DatabaseManager.shared
     private let dictionaryService = DictionaryService.shared
@@ -46,6 +76,45 @@ class VocabularyViewModel: ObservableObject {
         vocabulary = databaseManager.fetchVocabulary(for: categoryId)
         backfillVocabularyDefinitionsIfNeeded()
         todayReviewWords = databaseManager.fetchTodayReviewVocabulary(for: categoryId)
+    }
+    
+    /// 根据筛选类型获取单词列表
+    func filteredVocabularyForType(_ type: VocabularyFilterType) -> [Vocabulary] {
+        switch type {
+        case .all:
+            return vocabulary
+        case .mastered:
+            return vocabulary.filter { $0.masteredLevel >= 4 }
+        case .learning:
+            return vocabulary.filter { $0.masteredLevel > 0 && $0.masteredLevel < 4 }
+        case .reviewToday:
+            return todayReviewWords
+        }
+    }
+    
+    /// 设置筛选类型并打开筛选列表
+    func setFilterAndShowList(_ type: VocabularyFilterType) {
+        filterType = type
+        showingFilteredList = true
+    }
+    
+    /// 获取筛选状态的单词数量
+    func countForFilterType(_ type: VocabularyFilterType) -> Int {
+        switch type {
+        case .all:
+            return totalVocabularyCount
+        case .mastered:
+            return masteredVocabularyCount
+        case .learning:
+            return vocabulary.count - masteredVocabularyCount - todayReviewCount
+        case .reviewToday:
+            return todayReviewCount
+        }
+    }
+    
+    /// 学习中单词数量
+    var learningVocabularyCount: Int {
+        vocabulary.count - masteredVocabularyCount - todayReviewCount
     }
 
     /// 选择分类
@@ -246,6 +315,15 @@ class VocabularyViewModel: ObservableObject {
                let partOfSpeech = dictionaryService.getPartOfSpeechFromDictionary(for: vocabulary[index].word) {
                 vocabulary[index].partOfSpeech = partOfSpeech
                 hasUpdates = true
+            }
+
+            // 补全按词性分组的释义
+            if vocabulary[index].groupedDefinitions == nil || vocabulary[index].groupedDefinitions?.isEmpty == true {
+                let grouped = dictionaryService.getGroupedDefinitions(for: vocabulary[index].word)
+                if !grouped.isEmpty {
+                    vocabulary[index].groupedDefinitions = grouped.map { PosDefinitions(pos: $0.pos, definitions: $0.definitions) }
+                    hasUpdates = true
+                }
             }
         }
 

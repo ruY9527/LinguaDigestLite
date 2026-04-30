@@ -86,9 +86,15 @@ class ArticleViewModel: ObservableObject {
         loadArticles()
     }
 
-    /// 删除文章
+    /// 删除文章（跳过收藏文章）
     func deleteArticle(_ article: Article) {
         databaseManager.deleteArticle(article)
+        loadArticles()
+    }
+
+    /// 真正删除收藏文章（从收藏存储和普通存储中同时移除）
+    func deleteFavoriteArticle(_ article: Article) {
+        databaseManager.deleteFavoriteArticle(article)
         loadArticles()
     }
 

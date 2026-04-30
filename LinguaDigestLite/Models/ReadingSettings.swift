@@ -31,7 +31,7 @@ struct ReadingSettings: Codable {
         self.showPhonetic = true
         self.speechRate = 0.5
     }
-    
+
     static let standardFonts = [
         "System": nil,
         "Georgia": "Georgia",
@@ -40,6 +40,41 @@ struct ReadingSettings: Codable {
         "Palatino": "Palatino",
         "Times New Roman": "TimesNewRomanPSMT"
     ]
+}
+
+/// 每日复习提醒设置
+struct ReminderSettings: Codable {
+    /// 是否启用每日复习提醒
+    var dailyReviewEnabled: Bool
+    
+    /// 提醒时间（小时，0-23）
+    var reminderHour: Int
+    
+    /// 提醒时间（分钟，0-59）
+    var reminderMinute: Int
+    
+    /// 提醒标题
+    var reminderTitle: String
+    
+    init() {
+        self.dailyReviewEnabled = false
+        self.reminderHour = 9      // 默认早上9点
+        self.reminderMinute = 0
+        self.reminderTitle = "每日复习提醒"
+    }
+    
+    /// 提醒时间字符串
+    var reminderTimeString: String {
+        String(format: "%02d:%02d", reminderHour, reminderMinute)
+    }
+    
+    /// 设置提醒时间
+    func setTime(hour: Int, minute: Int) -> ReminderSettings {
+        var newSettings = self
+        newSettings.reminderHour = max(0, min(23, hour))
+        newSettings.reminderMinute = max(0, min(59, minute))
+        return newSettings
+    }
 }
 
 /// 阅读主题
@@ -110,16 +145,23 @@ enum VocabularyLevel: String, Codable, CaseIterable {
 /// 用户设置管理
 class UserSettings: ObservableObject {
     static let shared = UserSettings()
-    
+
     private let defaults = UserDefaults.standard
     private let readingSettingsKey = "readingSettings"
-    
+    private let reminderSettingsKey = "reminderSettings"
+
     @Published var readingSettings: ReadingSettings {
         didSet {
             saveReadingSettings()
         }
     }
     
+    @Published var reminderSettings: ReminderSettings {
+        didSet {
+            saveReminderSettings()
+        }
+    }
+
     private init() {
         if let data = defaults.data(forKey: readingSettingsKey),
            let settings = try? JSONDecoder().decode(ReadingSettings.self, from: data) {
@@ -127,14 +169,38 @@ class UserSettings: ObservableObject {
         } else {
             self.readingSettings = ReadingSettings()
         }
+        
+        if let data = defaults.data(forKey: reminderSettingsKey),
+           let settings = try? JSONDecoder().decode(ReminderSettings.self, from: data) {
+            self.reminderSettings = settings
+        } else {
+            self.reminderSettings = ReminderSettings()
+        }
     }
-    
+
     private func saveReadingSettings() {
         guard let data = try? JSONEncoder().encode(readingSettings) else { return }
         defaults.set(data, forKey: readingSettingsKey)
     }
     
+    private func saveReminderSettings() {
+        guard let data = try? JSONEncoder().encode(reminderSettings) else { return }
+        defaults.set(data, forKey: reminderSettingsKey)
+    }
+
     func resetToDefaults() {
         readingSettings = ReadingSettings()
+        reminderSettings = ReminderSettings()
+    }
+    
+    /// 切换每日提醒开关
+    func toggleDailyReminder(_ enabled: Bool) {
+        reminderSettings.dailyReviewEnabled = enabled
+    }
+    
+    /// 设置提醒时间
+    func setReminderTime(hour: Int, minute: Int) {
+        reminderSettings.reminderHour = max(0, min(23, hour))
+        reminderSettings.reminderMinute = max(0, min(59, minute))
     }
 }

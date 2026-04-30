@@ -7,6 +7,12 @@
 
 import Foundation
 
+/// 按词性分组的释义
+struct PosDefinitions: Codable, Equatable {
+    let pos: String
+    let definitions: [String]
+}
+
 /// 生词模型（简化版，不依赖GRDB）
 struct Vocabulary: Identifiable, Codable {
     var id: UUID
@@ -25,6 +31,7 @@ struct Vocabulary: Identifiable, Codable {
     var addedAt: Date
     var lastReviewedAt: Date?
     var masteredLevel: Int // 0-5 掌握程度
+    var groupedDefinitions: [PosDefinitions]? // 按词性分组的多个释义
 
     init(
         id: UUID = UUID(),
@@ -35,7 +42,8 @@ struct Vocabulary: Identifiable, Codable {
         exampleSentence: String? = nil,
         articleId: UUID? = nil,
         categoryId: UUID? = nil,
-        contextSnippet: String? = nil
+        contextSnippet: String? = nil,
+        groupedDefinitions: [PosDefinitions]? = nil
     ) {
         self.id = id
         self.word = word.lowercased()
@@ -51,6 +59,7 @@ struct Vocabulary: Identifiable, Codable {
         self.interval = 0
         self.addedAt = Date()
         self.masteredLevel = 0
+        self.groupedDefinitions = groupedDefinitions
     }
 }
 

@@ -103,6 +103,17 @@ struct ReaderView: View {
                     SystemDictionarySheetView(viewModel: viewModel, word: word)
                 }
             }
+            .sheet(isPresented: $viewModel.showingSentenceTranslation) {
+                SentenceTranslationSheet(viewModel: viewModel)
+            }
+            .alert("选择翻译服务", isPresented: $viewModel.showingTranslationMenu) {
+                ForEach(viewModel.availableTranslationServices, id: \.self) { serviceType in
+                    Button(serviceType.rawValue) {
+                        viewModel.translateWithService(type: serviceType)
+                    }
+                }
+                Button("取消", role: .cancel) {}
+            }
         }
     }
 
@@ -239,6 +250,9 @@ struct ReaderView: View {
             },
             onCloseWordDefinition: {
                 viewModel.closeWordDefinition()
+            },
+            onSentenceSelect: { sentence, range in
+                viewModel.selectSentenceForTranslation(sentence, range: range)
             }
         )
         .padding(20)
@@ -436,23 +450,39 @@ struct ReaderView: View {
                 }
             }
 
-            if !viewModel.selectedWordDefinitions.isEmpty {
+            // 按词性分组显示释义
+            if !viewModel.selectedWordGroupedDefinitions.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(Array(viewModel.selectedWordGroupedDefinitions.enumerated()), id: \.offset) { _, group in
+                        VStack(alignment: .leading, spacing: 4) {
+                            // 词性标签
+                            Text(DictionaryService.displayNameForPartOfSpeech(group.pos))
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(Color(hex: DictionaryService.colorForPartOfSpeech(group.pos)).opacity(0.15))
+                                .foregroundColor(Color(hex: DictionaryService.colorForPartOfSpeech(group.pos)))
+                                .cornerRadius(4)
+
+                            // 该词性下的所有释义
+                            ForEach(Array(group.definitions.enumerated()), id: \.offset) { index, definition in
+                                (Text("\(index + 1). ").font(.caption.weight(.semibold)).foregroundColor(.blue)
+                                 + Text(definition).font(.subheadline).foregroundColor(.primary))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                }
+            } else if !viewModel.selectedWordDefinitions.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("释义")
                         .font(.caption)
                         .foregroundColor(.secondary)
 
                     ForEach(Array(viewModel.selectedWordDefinitions.enumerated()), id: \.offset) { index, definition in
-                        HStack(alignment: .top, spacing: 8) {
-                            Text("\(index + 1).")
-                                .font(.caption.weight(.semibold))
-                                .foregroundColor(.blue)
-
-                            Text(definition)
-                                .font(.subheadline)
-                                .foregroundColor(.primary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+                        (Text("\(index + 1). ").font(.caption.weight(.semibold)).foregroundColor(.blue)
+                         + Text(definition).font(.subheadline).foregroundColor(.primary))
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             } else if let definition = viewModel.selectedWordDefinition {
@@ -612,6 +642,7 @@ struct ArticleReaderTextView: UIViewRepresentable {
     let backgroundColor: UIColor
     let onWordDoubleTap: (String, CGPoint) -> Void
     let onCloseWordDefinition: () -> Void
+    let onSentenceSelect: ((String, NSRange) -> Void)?  // 句子选择回调
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -625,7 +656,7 @@ struct ArticleReaderTextView: UIViewRepresentable {
 
         textView.attributedText = buildFullText()
 
-        // 添加双击手势识别器
+        // 添加双击手势识别器（查单词）
         let doubleTapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleDoubleTap(_:)))
         doubleTapGesture.numberOfTapsRequired = 2
         textView.addGestureRecognizer(doubleTapGesture)
@@ -635,6 +666,14 @@ struct ArticleReaderTextView: UIViewRepresentable {
         singleTapGesture.numberOfTapsRequired = 1
         singleTapGesture.require(toFail: doubleTapGesture)
         textView.addGestureRecognizer(singleTapGesture)
+        
+        // 添加长按手势识别器（句子翻译）
+        let longPressGesture = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress(_:)))
+        longPressGesture.minimumPressDuration = 0.5
+        textView.addGestureRecognizer(longPressGesture)
+        
+        // 添加翻译菜单项
+        context.coordinator.setupTranslationMenu(textView)
 
         return textView
     }
@@ -651,7 +690,7 @@ struct ArticleReaderTextView: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onWordDoubleTap: onWordDoubleTap, onCloseWordDefinition: onCloseWordDefinition)
+        Coordinator(onWordDoubleTap: onWordDoubleTap, onCloseWordDefinition: onCloseWordDefinition, onSentenceSelect: onSentenceSelect)
     }
 
     /// 构建正文文本
@@ -746,10 +785,24 @@ struct ArticleReaderTextView: UIViewRepresentable {
     class Coordinator: NSObject {
         let onWordDoubleTap: (String, CGPoint) -> Void
         let onCloseWordDefinition: () -> Void
+        let onSentenceSelect: ((String, NSRange) -> Void)?
+        
+        private weak var textView: UITextView?
 
-        init(onWordDoubleTap: @escaping (String, CGPoint) -> Void, onCloseWordDefinition: @escaping () -> Void) {
+        init(onWordDoubleTap: @escaping (String, CGPoint) -> Void, onCloseWordDefinition: @escaping () -> Void, onSentenceSelect: ((String, NSRange) -> Void)? = nil) {
             self.onWordDoubleTap = onWordDoubleTap
             self.onCloseWordDefinition = onCloseWordDefinition
+            self.onSentenceSelect = onSentenceSelect
+        }
+        
+        /// 设置翻译菜单
+        func setupTranslationMenu(_ textView: UITextView) {
+            self.textView = textView
+            
+            // 创建自定义菜单项
+            let translateMenuItem = UIMenuItem(title: "翻译句子", action: #selector(Coordinator.translateSelectedText))
+            UIMenuController.shared.menuItems = [translateMenuItem]
+            UIMenuController.shared.update()
         }
 
         @objc func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
@@ -771,6 +824,45 @@ struct ArticleReaderTextView: UIViewRepresentable {
                     let globalPosition = textView.convert(location, to: textView.window)
                     onWordDoubleTap(cleanedWord, globalPosition)
                     highlightWord(textView, range: wordRange)
+                }
+            }
+        }
+        
+        @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+            guard gesture.state == .began else { return }
+            guard let textView = gesture.view as? UITextView else { return }
+            
+            let location = gesture.location(in: textView)
+            
+            guard let position = textView.closestPosition(to: location) else { return }
+            let characterIndex = textView.offset(from: textView.beginningOfDocument, to: position)
+            
+            if characterIndex < textView.attributedText.length {
+                let text = textView.attributedText.string as NSString
+                let sentenceRange = sentenceRangeAt(characterIndex, in: text)
+                let sentence = text.substring(with: sentenceRange)
+                
+                let cleanedSentence = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                if cleanedSentence.count >= 5, let callback = onSentenceSelect {
+                    callback(cleanedSentence, sentenceRange)
+                    // 高亮选中的句子
+                    textView.selectedRange = sentenceRange
+                }
+            }
+        }
+        
+        /// 翻译选中的文本（菜单项动作）
+        @objc func translateSelectedText() {
+            guard let textView = textView else { return }
+            let selectedRange = textView.selectedRange
+            
+            if selectedRange.length > 0 {
+                let text = textView.attributedText.string as NSString
+                let selectedText = text.substring(with: selectedRange)
+                
+                if let callback = onSentenceSelect {
+                    callback(selectedText, selectedRange)
                 }
             }
         }
@@ -796,6 +888,41 @@ struct ArticleReaderTextView: UIViewRepresentable {
             }
 
             return NSRange(location: start, length: end - start)
+        }
+        
+        /// 获取句子范围
+        private func sentenceRangeAt(_ index: Int, in text: NSString) -> NSRange {
+            var start = index
+            var end = index
+            
+            // 向前查找句子开始
+            while start > 0 {
+                let char = text.character(at: start - 1)
+                if isSentenceBoundary(char) { break }
+                start -= 1
+            }
+            
+            // 向后查找句子结束
+            while end < text.length {
+                let char = text.character(at: end)
+                if isSentenceBoundary(char) && end > index {
+                    end += 1  // 包含结束标点
+                    break
+                }
+                end += 1
+            }
+            
+            return NSRange(location: start, length: end - start)
+        }
+        
+        /// 判断是否是句子边界
+        private func isSentenceBoundary(_ char: UniChar) -> Bool {
+            return char == 46 ||   // .
+                   char == 63 ||   // ?
+                   char == 33 ||   // !
+                   char == 10 ||   // newline
+                   char == 8226 || // • (bullet)
+                   char == 13      // CR
         }
 
         private func isWordBoundary(_ char: UniChar) -> Bool {
@@ -899,7 +1026,36 @@ private struct SystemDictionarySheetView: View {
                 Spacer()
             }
 
-            if !viewModel.selectedWordDefinitions.isEmpty {
+            if !viewModel.selectedWordGroupedDefinitions.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("快速释义")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    ForEach(Array(viewModel.selectedWordGroupedDefinitions.prefix(3).enumerated()), id: \.offset) { _, group in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(DictionaryService.displayNameForPartOfSpeech(group.pos))
+                                .font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 1)
+                                .background(Color(hex: DictionaryService.colorForPartOfSpeech(group.pos)).opacity(0.15))
+                                .foregroundColor(Color(hex: DictionaryService.colorForPartOfSpeech(group.pos)))
+                                .cornerRadius(3)
+
+                            ForEach(Array(group.definitions.prefix(2).enumerated()), id: \.offset) { index, definition in
+                                HStack(alignment: .top, spacing: 6) {
+                                    Text("\(index + 1).")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundColor(.blue)
+                                    Text(definition)
+                                        .font(.caption)
+                                        .foregroundColor(.primary)
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if !viewModel.selectedWordDefinitions.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("快速释义")
                         .font(.caption)
@@ -910,7 +1066,6 @@ private struct SystemDictionarySheetView: View {
                             Text("\(index + 1).")
                                 .font(.caption.weight(.semibold))
                                 .foregroundColor(.blue)
-
                             Text(definition)
                                 .font(.subheadline)
                                 .foregroundColor(.primary)
@@ -994,6 +1149,130 @@ private final class DictionaryContainerViewController: UIViewController {
 
         controller.didMove(toParent: self)
         dictionaryController = controller
+    }
+}
+
+// MARK: - 句子翻译弹窗
+
+private struct SentenceTranslationSheet: View {
+    @ObservedObject var viewModel: ReaderViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                // 原文显示
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("原文")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+
+                    ScrollView {
+                        Text(viewModel.selectedSentence ?? "")
+                            .font(.body)
+                            .foregroundColor(.primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Color(UIColor.secondarySystemBackground))
+                            .cornerRadius(12)
+                    }
+                    .frame(maxHeight: 150)
+                }
+                .padding(.horizontal)
+
+                Divider()
+
+                // 翻译服务选择
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("选择翻译服务")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            ForEach(viewModel.availableTranslationServices, id: \.self) { serviceType in
+                                Button {
+                                    viewModel.translateWithService(type: serviceType)
+                                } label: {
+                                    HStack {
+                                        Image(systemName: iconForService(serviceType))
+                                            .font(.title2)
+                                            .foregroundColor(colorForService(serviceType))
+
+                                        Text(serviceType.rawValue)
+                                            .font(.headline)
+                                            .foregroundColor(.primary)
+
+                                        Spacer()
+
+                                        Image(systemName: "arrow.up.right.square")
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding()
+                                    .background(Color(UIColor.tertiarySystemBackground))
+                                    .cornerRadius(12)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                }
+
+                // 提示信息
+                Text("点击翻译服务将跳转到对应应用进行翻译")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.bottom)
+            }
+            .navigationTitle("句子翻译")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("关闭") {
+                        dismiss()
+                        viewModel.closeSentenceTranslation()
+                    }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        if let sentence = viewModel.selectedSentence {
+                            viewModel.speakSentence(sentence)
+                        }
+                    } label: {
+                        Image(systemName: "speaker.wave.3.fill")
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+    
+    private func iconForService(_ serviceType: TranslationServiceType) -> String {
+        switch serviceType {
+        case .system:
+            return "character.bubble"
+        case .google:
+            return "globe"
+        case .baidu:
+            return "translate"
+        case .deepL:
+            return "doc.text"
+        }
+    }
+
+    private func colorForService(_ serviceType: TranslationServiceType) -> Color {
+        switch serviceType {
+        case .system:
+            return .blue
+        case .google:
+            return .green
+        case .baidu:
+            return .orange
+        case .deepL:
+            return .purple
+        }
     }
 }
 

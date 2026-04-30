@@ -151,11 +151,19 @@ struct ArticleListView: View {
                             }
                             .tint(article.isFavorite ? .gray : .yellow)
 
-                            // 删除按钮
-                            Button(role: .destructive) {
-                                viewModel.deleteArticle(article)
-                            } label: {
-                                Label("删除", systemImage: "trash")
+                            // 删除按钮：收藏界面真正删除，其他界面跳过收藏文章
+                            if viewModel.showingFavoritesOnly {
+                                Button(role: .destructive) {
+                                    viewModel.deleteFavoriteArticle(article)
+                                } label: {
+                                    Label("删除", systemImage: "trash")
+                                }
+                            } else if !article.isFavorite {
+                                Button(role: .destructive) {
+                                    viewModel.deleteArticle(article)
+                                } label: {
+                                    Label("删除", systemImage: "trash")
+                                }
                             }
                         }
                     }

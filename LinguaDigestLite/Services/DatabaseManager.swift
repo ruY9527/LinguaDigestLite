@@ -17,6 +17,7 @@ class DatabaseManager {
     // 存储键
     private let feedsKey = "linguadigest_feeds"
     private let articlesKey = "linguadigest_articles"
+    private let favoriteArticlesKey = "linguadigest_favorite_articles"
     private let vocabularyKey = "linguadigest_vocabulary"
     private let categoriesKey = "linguadigest_categories"
 
@@ -109,13 +110,14 @@ class DatabaseManager {
         saveFeeds(storedFeeds)
     }
 
-    /// 重建所有内置RSS订阅，并删除其旧文章缓存。
+    /// 重建所有内置RSS订阅，并删除其旧文章缓存（保留收藏文章）。
     func resetBuiltInFeeds() {
         syncBuiltInFeeds()
         let builtInFeedIds = Set(loadFeeds().filter { $0.isBuiltIn }.map(\.id))
 
         var articles = loadArticles()
         articles.removeAll { article in
+            guard !article.isFavorite else { return false }
             if let feedId = article.feedId {
                 return builtInFeedIds.contains(feedId)
             }
@@ -132,15 +134,15 @@ class DatabaseManager {
         return feed
     }
 
-    /// 删除RSS源
+    /// 删除RSS源（保留收藏文章）
     func deleteFeed(_ feed: Feed) {
         var feeds = loadFeeds()
         feeds.removeAll { $0.id == feed.id }
         saveFeeds(feeds)
 
-        // 删除相关文章
+        // 删除相关文章（跳过收藏文章）
         var articles = loadArticles()
-        articles.removeAll { $0.feedId == feed.id }
+        articles.removeAll { $0.feedId == feed.id && !$0.isFavorite }
         saveArticles(articles)
     }
 
@@ -156,20 +158,63 @@ class DatabaseManager {
     // MARK: - Article 操作
 
     private func loadArticles() -> [Article] {
+        var articles: [Article] = []
         if let data = defaults.data(forKey: articlesKey),
+           let decoded = try? JSONDecoder().decode([Article].self, from: data) {
+            articles = decoded
+        }
+
+        // 合并收藏存储中的文章，确保收藏文章不会丢失
+        let favorites = loadFavoriteArticles()
+        for fav in favorites {
+            if !articles.contains(where: { $0.id == fav.id }) {
+                // 主存储中缺失的收藏文章，补回
+                var restored = fav
+                restored.isFavorite = true
+                articles.insert(restored, at: 0)
+            } else if let idx = articles.firstIndex(where: { $0.id == fav.id }) {
+                // 主存储中存在，用收藏快照补全可能缺失的 content
+                if articles[idx].content == nil || articles[idx].content?.isEmpty == true {
+                    if let savedContent = fav.content, !savedContent.isEmpty {
+                        articles[idx].content = savedContent
+                        articles[idx].htmlContent = fav.htmlContent
+                    }
+                }
+                articles[idx].isFavorite = true
+            }
+        }
+
+        return articles
+    }
+
+    private func saveArticles(_ articles: [Article]) {
+        // 分批保存，避免UserDefaults限制
+        // 收藏文章始终保留，只截断非收藏的旧文章
+        let favorites = articles.filter { $0.isFavorite }
+        let nonFavorites = articles.filter { !$0.isFavorite }
+        let maxNonFavorites = max(0, 500 - favorites.count)
+        let toSave = favorites + Array(nonFavorites.suffix(maxNonFavorites))
+
+        if let data = try? JSONEncoder().encode(toSave) {
+            defaults.set(data, forKey: articlesKey)
+        }
+    }
+
+    // MARK: - 收藏文章存储
+
+    /// 加载收藏文章
+    private func loadFavoriteArticles() -> [Article] {
+        if let data = defaults.data(forKey: favoriteArticlesKey),
            let articles = try? JSONDecoder().decode([Article].self, from: data) {
             return articles
         }
         return []
     }
 
-    private func saveArticles(_ articles: [Article]) {
-        // 分批保存，避免UserDefaults限制
-        let maxCount = 500
-        let toSave = Array(articles.suffix(maxCount))
-
-        if let data = try? JSONEncoder().encode(toSave) {
-            defaults.set(data, forKey: articlesKey)
+    /// 保存收藏文章
+    private func saveFavoriteArticles(_ articles: [Article]) {
+        if let data = try? JSONEncoder().encode(articles) {
+            defaults.set(data, forKey: favoriteArticlesKey)
         }
     }
 
@@ -183,9 +228,9 @@ class DatabaseManager {
         return loadArticles().filter { $0.feedId == feedId }
     }
 
-    /// 获取收藏文章
+    /// 获取收藏文章（从独立收藏存储读取）
     func fetchFavoriteArticles() -> [Article] {
-        return loadArticles().filter { $0.isFavorite }
+        return loadFavoriteArticles()
     }
 
     /// 获取未读文章
@@ -259,12 +304,29 @@ class DatabaseManager {
     /// 切换文章收藏状态
     func toggleArticleFavorite(_ article: Article) -> Bool {
         var articles = loadArticles()
-        if let index = articles.firstIndex(where: { $0.id == article.id }) {
-            articles[index].isFavorite = !articles[index].isFavorite
-            saveArticles(articles)
-            return articles[index].isFavorite
+        guard let index = articles.firstIndex(where: { $0.id == article.id }) else { return false }
+
+        let newStatus = !articles[index].isFavorite
+        articles[index].isFavorite = newStatus
+        saveArticles(articles)
+
+        if newStatus {
+            // 收藏：将文章快照存入收藏存储
+            var favorites = loadFavoriteArticles()
+            if !favorites.contains(where: { $0.id == article.id }) {
+                var snapshot = articles[index]
+                snapshot.isFavorite = true
+                favorites.insert(snapshot, at: 0)
+                saveFavoriteArticles(favorites)
+            }
+        } else {
+            // 取消收藏：从收藏存储中移除
+            var favorites = loadFavoriteArticles()
+            favorites.removeAll { $0.id == article.id }
+            saveFavoriteArticles(favorites)
         }
-        return false
+
+        return newStatus
     }
 
     /// 更新阅读进度
@@ -276,8 +338,21 @@ class DatabaseManager {
         }
     }
 
-    /// 删除文章
+    /// 删除文章（跳过收藏文章，收藏文章只能通过 deleteFavoriteArticle 删除）
     func deleteArticle(_ article: Article) {
+        var articles = loadArticles()
+        articles.removeAll { $0.id == article.id && !$0.isFavorite }
+        saveArticles(articles)
+    }
+
+    /// 真正删除收藏文章（从收藏存储和普通存储中同时移除）
+    func deleteFavoriteArticle(_ article: Article) {
+        // 从收藏存储中移除
+        var favorites = loadFavoriteArticles()
+        favorites.removeAll { $0.id == article.id }
+        saveFavoriteArticles(favorites)
+
+        // 从普通存储中移除
         var articles = loadArticles()
         articles.removeAll { $0.id == article.id }
         saveArticles(articles)
