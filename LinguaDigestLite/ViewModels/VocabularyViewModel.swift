@@ -325,6 +325,14 @@ class VocabularyViewModel: ObservableObject {
                     hasUpdates = true
                 }
             }
+
+            // 补全英文释义
+            if vocabulary[index].englishDefinition == nil || vocabulary[index].englishDefinition?.isEmpty == true {
+                if let englishDef = dictionaryService.getEnglishDefinition(for: vocabulary[index].word) {
+                    vocabulary[index].englishDefinition = englishDef
+                    hasUpdates = true
+                }
+            }
         }
 
         if hasUpdates {

@@ -203,7 +203,7 @@ class DictionaryDatabaseManager {
 
         var results: [DictionaryEntry] = []
 
-        let querySQL = "SELECT word, phonetic, translation, pos, collins, oxford, tag, bnc, frq FROM stardict WHERE word = ?"
+        let querySQL = "SELECT word, phonetic, definition, translation, pos, collins, oxford, tag, bnc, frq FROM stardict WHERE word = ?"
 
         var stmt: OpaquePointer?
         if sqlite3_prepare_v2(database, querySQL, -1, &stmt, nil) == SQLITE_OK {
@@ -212,13 +212,23 @@ class DictionaryDatabaseManager {
             while sqlite3_step(stmt) == SQLITE_ROW {
                 let word = String(cString: sqlite3_column_text(stmt, 0))
                 let phonetic = sqlite3_column_text(stmt, 1).map { String(cString: $0) }
-                let translation = sqlite3_column_text(stmt, 2).map { String(cString: $0) }
-                let pos = sqlite3_column_text(stmt, 3).map { String(cString: $0) }
-                let collins = Int(sqlite3_column_int(stmt, 4))
-                let oxford = Int(sqlite3_column_int(stmt, 5))
-                let tag = sqlite3_column_text(stmt, 6).map { String(cString: $0) }
+                let englishDefRaw = sqlite3_column_text(stmt, 2).map { String(cString: $0) }
+                let translation = sqlite3_column_text(stmt, 3).map { String(cString: $0) }
+                let pos = sqlite3_column_text(stmt, 4).map { String(cString: $0) }
+                let collins = Int(sqlite3_column_int(stmt, 5))
+                let oxford = Int(sqlite3_column_int(stmt, 6))
+                let tag = sqlite3_column_text(stmt, 7).map { String(cString: $0) }
 
                 guard let translationText = translation, !translationText.isEmpty else { continue }
+
+                // 解析英文释义（以 \n 分隔多条，合并为完整字符串）
+                let englishDefinition: String? = englishDefRaw.flatMap { raw in
+                    let normalized = raw.replacingOccurrences(of: "\\n", with: "\n")
+                    let parts = normalized.components(separatedBy: "\n")
+                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                        .filter { !$0.isEmpty }
+                    return parts.isEmpty ? nil : parts.joined(separator: "\n")
+                }
 
                 // translation 字段以 \n 分隔多个释义（存储为字面两个字符 '\' + 'n'，需先替换为真实换行）
                 let normalizedTranslation = translationText.replacingOccurrences(of: "\\n", with: "\n")
@@ -238,6 +248,7 @@ class DictionaryDatabaseManager {
                         partOfSpeech: finalPos,
                         definition: cleanDef,
                         definitionSimple: cleanDef,
+                        englishDefinition: englishDefinition,
                         example: nil,
                         frequency: collins > 0 ? collins : nil,
                         level: tag

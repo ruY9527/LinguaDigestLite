@@ -32,6 +32,7 @@ struct Vocabulary: Identifiable, Codable {
     var lastReviewedAt: Date?
     var masteredLevel: Int // 0-5 掌握程度
     var groupedDefinitions: [PosDefinitions]? // 按词性分组的多个释义
+    var englishDefinition: String? // 英文释义
 
     init(
         id: UUID = UUID(),
@@ -43,7 +44,8 @@ struct Vocabulary: Identifiable, Codable {
         articleId: UUID? = nil,
         categoryId: UUID? = nil,
         contextSnippet: String? = nil,
-        groupedDefinitions: [PosDefinitions]? = nil
+        groupedDefinitions: [PosDefinitions]? = nil,
+        englishDefinition: String? = nil
     ) {
         self.id = id
         self.word = word.lowercased()
@@ -60,6 +62,7 @@ struct Vocabulary: Identifiable, Codable {
         self.addedAt = Date()
         self.masteredLevel = 0
         self.groupedDefinitions = groupedDefinitions
+        self.englishDefinition = englishDefinition
     }
 }
 

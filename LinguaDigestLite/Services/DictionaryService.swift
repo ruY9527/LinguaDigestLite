@@ -111,6 +111,17 @@ class DictionaryService {
         return definitions.joined(separator: "；")
     }
 
+    /// 获取单词的英文释义
+    func getEnglishDefinition(for word: String) -> String? {
+        for candidate in dictionaryLookupCandidates(for: word) {
+            let entries = DictionaryDatabaseManager.shared.queryAllEntries(word: candidate)
+            if let first = entries.first(where: { $0.englishDefinition != nil && !$0.englishDefinition!.isEmpty }) {
+                return first.englishDefinition
+            }
+        }
+        return nil
+    }
+
     /// 获取单词的词性（从词典）
     func getPartOfSpeechFromDictionary(for word: String) -> String? {
         for candidate in dictionaryLookupCandidates(for: word) {

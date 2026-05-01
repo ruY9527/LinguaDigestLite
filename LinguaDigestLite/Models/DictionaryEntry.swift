@@ -26,6 +26,9 @@ struct DictionaryEntry: Codable {
     
     /// 中文释义（简化版）
     let definitionSimple: String?
+
+    /// 英文释义
+    let englishDefinition: String?
     
     /// 例句
     let example: String?
@@ -49,6 +52,7 @@ struct DictionaryEntry: Codable {
         case partOfSpeech = "pos"
         case definition = "definition"
         case definitionSimple = "definition_simple"
+        case englishDefinition = "english_definition"
         case example = "example"
         case frequency = "frequency"
         case level = "level"
@@ -57,9 +61,10 @@ struct DictionaryEntry: Codable {
     }
     
     /// 从简化格式创建词条
-    init(word: String, phoneticUS: String? = nil, phoneticUK: String? = nil, 
-         partOfSpeech: String? = nil, definition: String, 
-         definitionSimple: String? = nil, example: String? = nil,
+    init(word: String, phoneticUS: String? = nil, phoneticUK: String? = nil,
+         partOfSpeech: String? = nil, definition: String,
+         definitionSimple: String? = nil, englishDefinition: String? = nil,
+         example: String? = nil,
          frequency: Int? = nil, level: String? = nil) {
         self.word = word
         self.phoneticUS = phoneticUS
@@ -67,6 +72,7 @@ struct DictionaryEntry: Codable {
         self.partOfSpeech = partOfSpeech
         self.definition = definition
         self.definitionSimple = definitionSimple ?? definition
+        self.englishDefinition = englishDefinition
         self.example = example
         self.frequency = frequency
         self.level = level

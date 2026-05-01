@@ -37,6 +37,7 @@ class ReaderViewModel: ObservableObject {
     @Published var selectedCategoryForWord: VocabularyCategory?
     @Published var categories: [VocabularyCategory] = []
     @Published var selectedWordGroupedDefinitions: [(pos: String, definitions: [String])] = []
+    @Published var selectedWordEnglishDefinition: String?
     
     // 句子翻译相关
     @Published var showingSentenceTranslation: Bool = false
@@ -180,6 +181,9 @@ class ReaderViewModel: ObservableObject {
         let grouped = dictionaryService.getGroupedDefinitions(for: word)
         selectedWordGroupedDefinitions = grouped
 
+        // 获取英文释义
+        selectedWordEnglishDefinition = dictionaryService.getEnglishDefinition(for: word)
+
         // 获取中文释义（优先使用离线词典）
         let definitions = dictionaryService.getDefinitions(for: word)
         if !definitions.isEmpty {
@@ -210,6 +214,7 @@ class ReaderViewModel: ObservableObject {
         selectedWordDefinition = nil
         selectedWordDefinitions = []
         selectedWordGroupedDefinitions = []
+        selectedWordEnglishDefinition = nil
         selectedWordPartOfSpeech = nil
         selectedWordContext = nil
         wordAnalysis = nil
@@ -312,6 +317,9 @@ class ReaderViewModel: ObservableObject {
         let posDefs: [PosDefinitions]? = selectedWordGroupedDefinitions.isEmpty ? nil :
             selectedWordGroupedDefinitions.map { PosDefinitions(pos: $0.pos, definitions: $0.definitions) }
 
+        // 获取英文释义
+        let englishDef = selectedWordEnglishDefinition ?? dictionaryService.getEnglishDefinition(for: word)
+
         let vocabulary = Vocabulary(
             word: word,
             definition: definitionToSave,
@@ -320,7 +328,8 @@ class ReaderViewModel: ObservableObject {
             articleId: article.id,
             categoryId: categoryId,
             contextSnippet: context,
-            groupedDefinitions: posDefs
+            groupedDefinitions: posDefs,
+            englishDefinition: englishDef
         )
 
         databaseManager.addVocabulary(vocabulary)

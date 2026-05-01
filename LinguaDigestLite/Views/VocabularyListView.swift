@@ -479,6 +479,7 @@ struct VocabularyRowView: View {
                     headerRow
                     metadataRow
                     definitionSection
+                    englishDefinitionSection
                     exampleSection
                     reviewSection
                 }
@@ -634,7 +635,29 @@ struct VocabularyRowView: View {
             }
         }
     }
-    
+
+    @ViewBuilder
+    private var englishDefinitionSection: some View {
+        if isExpanded, let englishDef = vocabulary.englishDefinition, !englishDef.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("English Definition")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+
+                ScrollView(.vertical, showsIndicators: true) {
+                    Text(englishDef)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxHeight: 80)
+            }
+            .padding(8)
+            .background(Color.gray.opacity(0.06))
+            .cornerRadius(8)
+        }
+    }
+
     @ViewBuilder
     private var exampleSection: some View {
         if let example = vocabulary.contextSnippet {
@@ -847,16 +870,54 @@ struct ReviewView: View {
                                 }
                             }
                         } else if let savedDef = word.definition, !savedDef.isEmpty {
-                            Text(savedDef)
-                                .font(.body)
+                            let items = savedDef.components(separatedBy: CharacterSet(charactersIn: "；;|"))
+                                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                                .filter { !$0.isEmpty }
+                            if items.count > 1 {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                                        (Text("\(index + 1). ").font(.caption.weight(.semibold)).foregroundColor(.blue)
+                                         + Text(item).font(.body).foregroundColor(.primary))
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                            } else {
+                                Text(savedDef)
+                                    .font(.body)
+                            }
                         } else if let offlineDef = DictionaryService.shared.getDefinition(for: word.word) {
-                            Text(offlineDef)
-                                .font(.body)
-                                .foregroundColor(.blue)
+                            let items = offlineDef.components(separatedBy: CharacterSet(charactersIn: "；;|"))
+                                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                                .filter { !$0.isEmpty }
+                            if items.count > 1 {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                                        (Text("\(index + 1). ").font(.caption.weight(.semibold)).foregroundColor(.blue)
+                                         + Text(item).font(.body).foregroundColor(.primary))
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                            } else {
+                                Text(offlineDef)
+                                    .font(.body)
+                                    .foregroundColor(.blue)
+                            }
                         } else {
                             Text("暂无释义")
                                 .font(.body)
                                 .foregroundColor(.secondary)
+                        }
+                        // 英文释义
+                        if let englishDef = word.englishDefinition, !englishDef.isEmpty {
+                            Text("English Definition:")
+                                .font(.headline)
+                            ScrollView(.vertical, showsIndicators: true) {
+                                Text(englishDef)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .frame(maxHeight: 100)
                         }
                         // 原文上下文
                         if let context = word.contextSnippet, !context.isEmpty {

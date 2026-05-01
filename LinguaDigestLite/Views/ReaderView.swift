@@ -486,14 +486,25 @@ struct ReaderView: View {
                     }
                 }
             } else if let definition = viewModel.selectedWordDefinition {
+                let items = definition.components(separatedBy: CharacterSet(charactersIn: "；;|"))
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
                 VStack(alignment: .leading, spacing: 4) {
                     Text("释义")
                         .font(.caption)
                         .foregroundColor(.secondary)
 
-                    Text(definition)
-                        .font(.subheadline)
-                        .foregroundColor(.primary)
+                    if items.count > 1 {
+                        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                            (Text("\(index + 1). ").font(.caption.weight(.semibold)).foregroundColor(.blue)
+                             + Text(item).font(.subheadline).foregroundColor(.primary))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    } else {
+                        Text(definition)
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                    }
                 }
             }
 
@@ -529,6 +540,23 @@ struct ReaderView: View {
     /// 分类选择和添加按钮
     private func categorySelectionAndAdd(_ word: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
+            // 英文释义
+            if let englishDef = viewModel.selectedWordEnglishDefinition, !englishDef.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("English Definition")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    ScrollView(.vertical, showsIndicators: true) {
+                        Text(englishDef)
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxHeight: 120)
+                }
+            }
+
             Text("添加到分类")
                 .font(.caption)
                 .foregroundColor(.secondary)

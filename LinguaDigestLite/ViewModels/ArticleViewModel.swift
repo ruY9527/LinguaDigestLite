@@ -154,8 +154,8 @@ class ArticleViewModel: ObservableObject {
         databaseManager.fetchFavoriteArticles().count
     }
 
-    /// 文章总数
+    /// 文章总数（始终反映实际总数，不受当前筛选影响）
     var totalCount: Int {
-        articles.count
+        databaseManager.fetchAllArticles().count
     }
 }

@@ -56,32 +56,37 @@ struct MainTabView: View {
     @StateObject private var articleViewModel = ArticleViewModel()
     @StateObject private var feedViewModel = FeedViewModel()
     @StateObject private var vocabularyViewModel = VocabularyViewModel()
-    
+    @State private var selectedTab = 0
+
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             // 文章列表
-            ArticleListView(viewModel: articleViewModel, feedViewModel: feedViewModel)
+            ArticleListView(viewModel: articleViewModel, feedViewModel: feedViewModel, selectedTab: $selectedTab)
                 .tabItem {
                     Label("文章", systemImage: "newspaper.fill")
                 }
-            
+                .tag(0)
+
             // RSS源管理
             FeedListView(viewModel: feedViewModel)
                 .tabItem {
                     Label("订阅", systemImage: "link.circle.fill")
                 }
+                .tag(1)
             
             // 生词本
             VocabularyListView(viewModel: vocabularyViewModel)
                 .tabItem {
                     Label("生词本", systemImage: "book.fill")
                 }
-            
+                .tag(2)
+
             // 设置
             SettingsView()
                 .tabItem {
                     Label("设置", systemImage: "gearshape.fill")
                 }
+                .tag(3)
         }
     }
 }

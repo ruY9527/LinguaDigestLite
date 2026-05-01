@@ -11,9 +11,9 @@ import SwiftUI
 struct ArticleListView: View {
     @ObservedObject var viewModel: ArticleViewModel
     @ObservedObject var feedViewModel: FeedViewModel
+    @Binding var selectedTab: Int
 
     @State private var searchText: String = ""
-    @State private var showingAddFeed: Bool = false
     @State private var selectedArticle: Article?
     @State private var showingReader: Bool = false
     @State private var showingSourceInfoArticle: Article? = nil  // 当前显示来源信息的文章
@@ -47,9 +47,6 @@ struct ArticleListView: View {
                 if let article = selectedArticle {
                     ReaderView(article: article)
                 }
-            }
-            .sheet(isPresented: $showingAddFeed) {
-                AddFeedSheetView(feedViewModel: feedViewModel)
             }
         }
     }
@@ -109,7 +106,7 @@ struct ArticleListView: View {
                 ProgressView("加载中...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.articles.isEmpty {
-                emptyStateView
+                contextualEmptyState
             } else {
                 List {
                     ForEach(viewModel.articles, id: \.id) { article in
@@ -343,31 +340,70 @@ struct ArticleListView: View {
         return urlString
     }
 
-    /// 空状态视图
-    private var emptyStateView: some View {
+    /// 根据当前筛选模式显示不同的空状态
+    @ViewBuilder
+    private var contextualEmptyState: some View {
+        if viewModel.showingFavoritesOnly {
+            // 收藏为空：引导用户去浏览文章并收藏
+            emptyState(
+                icon: "star",
+                title: "暂无收藏文章",
+                subtitle: "浏览文章时点击星标即可收藏",
+                buttonTitle: "浏览全部文章",
+                buttonAction: { viewModel.showAll() }
+            )
+        } else if viewModel.showingUnreadOnly {
+            // 未读为空：所有文章都已读
+            emptyState(
+                icon: "checkmark.circle",
+                title: "没有未读文章",
+                subtitle: "所有文章都已阅读完毕",
+                buttonTitle: nil,
+                buttonAction: nil
+            )
+        } else {
+            // 全部为空：引导用户去订阅页添加源
+            emptyState(
+                icon: "newspaper",
+                title: "暂无文章",
+                subtitle: "请前往订阅页添加RSS订阅源",
+                buttonTitle: "前往添加订阅源",
+                buttonAction: { selectedTab = 1 }
+            )
+        }
+    }
+
+    /// 通用空状态视图
+    private func emptyState(
+        icon: String,
+        title: String,
+        subtitle: String,
+        buttonTitle: String?,
+        buttonAction: (() -> Void)?
+    ) -> some View {
         VStack(spacing: 16) {
-            Image(systemName: "newspaper")
+            Image(systemName: icon)
                 .font(.system(size: 60))
                 .foregroundColor(.gray)
 
-            Text("暂无文章")
+            Text(title)
                 .font(.headline)
                 .foregroundColor(.secondary)
 
-            Text("请先添加RSS订阅源或刷新内容")
+            Text(subtitle)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
 
-            Button {
-                showingAddFeed = true
-            } label: {
-                Text("添加订阅源")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(Color.blue)
-                    .cornerRadius(10)
+            if let buttonTitle = buttonTitle, let buttonAction = buttonAction {
+                Button(action: buttonAction) {
+                    Text(buttonTitle)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
