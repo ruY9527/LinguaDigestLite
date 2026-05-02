@@ -40,6 +40,11 @@ struct VocabularyCategory: Identifiable, Codable {
 
 // MARK: - 默认分类
 extension VocabularyCategory {
+    /// 是否为“全部”分类
+    var isAllCategory: Bool {
+        isDefault && order == 0
+    }
+
     /// 默认分类列表
     static var defaultCategories: [VocabularyCategory] {
         [
@@ -104,7 +109,7 @@ extension VocabularyCategory {
     
     /// 获取默认分类（全部）
     static var allCategory: VocabularyCategory {
-        defaultCategories.first { $0.name == "全部" } ?? defaultCategories[0]
+        defaultCategories.first(where: \.isAllCategory) ?? defaultCategories[0]
     }
 }
 

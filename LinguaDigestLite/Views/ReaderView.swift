@@ -595,25 +595,29 @@ struct ReaderView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(viewModel.categories, id: \.id) { category in
+                    ForEach(viewModel.selectableCategoriesForWord, id: \.id) { category in
                         Button {
-                            viewModel.selectedCategoryForWord = category
+                            viewModel.toggleCategorySelection(for: category)
                         } label: {
                             HStack(spacing: 6) {
                                 Image(systemName: category.icon)
                                     .font(.caption2)
                                 Text(category.name)
                                     .font(.caption)
+                                if viewModel.isCategorySelectedForWord(category) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.caption)
+                                }
                             }
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .background(
-                                viewModel.selectedCategoryForWord?.id == category.id
+                                viewModel.isCategorySelectedForWord(category)
                                     ? Color(hex: category.color)
                                     : Color(hex: category.color).opacity(0.2)
                             )
                             .foregroundColor(
-                                viewModel.selectedCategoryForWord?.id == category.id
+                                viewModel.isCategorySelectedForWord(category)
                                     ? .white
                                     : Color(hex: category.color)
                             )
@@ -628,7 +632,7 @@ struct ReaderView: View {
                 viewModel.addToVocabulary(
                     word: word,
                     context: viewModel.selectedWordContext,
-                    categoryId: viewModel.selectedCategoryForWord?.id
+                    categoryIds: Array(viewModel.selectedCategoryIdsForWord)
                 )
                 viewModel.closeWordDefinition()
             } label: {
@@ -1033,9 +1037,16 @@ private struct SystemDictionarySheetView: View {
 
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
                     Menu {
-                        ForEach(viewModel.categories, id: \.id) { category in
-                            Button(category.name) {
-                                viewModel.selectedCategoryForWord = category
+                        ForEach(viewModel.selectableCategoriesForWord, id: \.id) { category in
+                            Button {
+                                viewModel.toggleCategorySelection(for: category)
+                            } label: {
+                                HStack {
+                                    Text(category.name)
+                                    if viewModel.isCategorySelectedForWord(category) {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
                             }
                         }
                     } label: {
@@ -1046,7 +1057,7 @@ private struct SystemDictionarySheetView: View {
                         viewModel.addToVocabulary(
                             word: word,
                             context: viewModel.selectedWordContext,
-                            categoryId: viewModel.selectedCategoryForWord?.id
+                            categoryIds: Array(viewModel.selectedCategoryIdsForWord)
                         )
                     } label: {
                         Image(systemName: "plus.circle")
@@ -1076,8 +1087,8 @@ private struct SystemDictionarySheetView: View {
                             .cornerRadius(6)
                     }
 
-                    if let category = viewModel.selectedCategoryForWord {
-                        Text(String(format: L("category.addLabel"), category.name))
+                    if !viewModel.selectedCategoriesForWord.isEmpty {
+                        Text(String(format: L("category.addLabel"), viewModel.selectedCategoriesForWord.map(\.name).joined(separator: "、")))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }

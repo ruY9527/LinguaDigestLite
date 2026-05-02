@@ -20,7 +20,7 @@ struct VocabularyListView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if viewModel.vocabulary.isEmpty && viewModel.selectedCategory?.name != "全部" {
+                if viewModel.vocabulary.isEmpty && !(viewModel.selectedCategory?.isAllCategory ?? true) {
                     emptyCategoryView
                 } else if viewModel.vocabulary.isEmpty {
                     emptyStateView
@@ -32,12 +32,35 @@ struct VocabularyListView: View {
             .searchable(text: $searchText, prompt: L("search.vocabulary"))
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        showingCategoryList = true
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
+                Menu {
+                    ForEach(viewModel.categories, id: \.id) { category in
+                        Button {
+                            viewModel.selectCategory(category)
+                        } label: {
+                            HStack {
+                                Image(systemName: category.icon)
+                                    .foregroundColor(Color(hex: category.color))
+                                Text(category.name)
+                                Spacer()
+                                if viewModel.selectedCategory?.id == category.id {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        if let category = viewModel.selectedCategory {
+                            Image(systemName: category.icon)
+                                .foregroundColor(Color(hex: category.color))
+                            Text(category.name)
+                                .font(.headline)
+                        }
+                        Image(systemName: "chevron.down")
+                            .font(.caption2)
                     }
                 }
+            }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 12) {
@@ -72,7 +95,7 @@ struct VocabularyListView: View {
                 FilteredVocabularyListView(viewModel: viewModel, filterType: viewModel.filterType)
             }
             .onAppear {
-                viewModel.loadCategories()
+                viewModel.reloadData()
             }
         }
     }
@@ -168,7 +191,7 @@ struct VocabularyListView: View {
     private var vocabularyList: some View {
         List {
             ForEach(filteredVocabulary, id: \.id) { vocab in
-                VocabularyRowView(vocabulary: vocab, category: getCategoryForVocabulary(vocab)) {
+                VocabularyRowView(vocabulary: vocab, categories: getCategoriesForVocabulary(vocab)) {
                     viewModel.speakWord(vocab.word)
                 }
                 .swipeActions(edge: .trailing) {
@@ -195,11 +218,9 @@ struct VocabularyListView: View {
     }
     
     /// 获取生词所属分类
-    private func getCategoryForVocabulary(_ vocab: Vocabulary) -> VocabularyCategory? {
-        if let categoryId = vocab.categoryId {
-            return viewModel.categories.first { $0.id == categoryId }
-        }
-        return nil
+    private func getCategoriesForVocabulary(_ vocab: Vocabulary) -> [VocabularyCategory] {
+        let categoryIds = vocab.categoryIds.isEmpty ? (vocab.categoryId.map { [$0] } ?? []) : vocab.categoryIds
+        return viewModel.categories.filter { categoryIds.contains($0.id) }
     }
 
     /// 筛选后的生词列表
@@ -229,7 +250,7 @@ struct VocabularyListView: View {
                 .foregroundColor(.secondary)
             
             Button {
-                viewModel.selectCategory(viewModel.categories.first { $0.name == "全部" } ?? viewModel.categories[0])
+                viewModel.showAllVocabulary()
             } label: {
                 Text(L("action.showAllVocab"))
                     .font(.headline)
@@ -265,6 +286,7 @@ struct VocabularyListView: View {
 struct CategoryListView: View {
     @ObservedObject var viewModel: VocabularyViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var showingAddCategory: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -336,11 +358,16 @@ struct CategoryListView: View {
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        // 显示添加分类界面
+                        showingAddCategory = true
                     } label: {
                         Image(systemName: "plus")
                     }
                 }
+            }
+            .sheet(isPresented: $showingAddCategory, onDismiss: {
+                viewModel.loadCategories()
+            }) {
+                AddCategoryView(viewModel: viewModel)
             }
             .onAppear {
                 viewModel.loadCategories()
@@ -466,32 +493,45 @@ struct StatItem: View {
 /// 生词行视图
 struct VocabularyRowView: View {
     let vocabulary: Vocabulary
-    let category: VocabularyCategory?
+    let categories: [VocabularyCategory]
     let onSpeak: () -> Void
     
     @State private var isExpanded: Bool = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Button {
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
-                    isExpanded.toggle()
-                }
-            } label: {
-                VStack(alignment: .leading, spacing: 10) {
-                    headerRow
-                    metadataRow
-                    definitionSection
-                    englishDefinitionSection
-                    exampleSection
-                    reviewSection
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                Button {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 10) {
+                        headerRow
+                        metadataRow
+
+                        if !isExpanded {
+                            exampleSection
+                            reviewSection
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+
+                speakButton
             }
-            .buttonStyle(.plain)
-            
-            speakButton
+
+            if isExpanded {
+                definitionSection
+                englishDefinitionSection
+                exampleSection
+                reviewSection
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 10)
         .padding(.horizontal, 10)
         .background(cardBackground)
@@ -525,18 +565,32 @@ struct VocabularyRowView: View {
             
             Spacer()
             
-            if let cat = category {
-                HStack(spacing: 4) {
-                    Image(systemName: cat.icon)
-                        .font(.caption2)
-                    Text(cat.name)
-                        .font(.caption2)
+            if !categories.isEmpty {
+                HStack(spacing: 6) {
+                    ForEach(Array(categories.prefix(2)), id: \.id) { category in
+                        HStack(spacing: 4) {
+                            Image(systemName: category.icon)
+                                .font(.caption2)
+                            Text(category.name)
+                                .font(.caption2)
+                        }
+                        .foregroundColor(Color(hex: category.color))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color(hex: category.color).opacity(0.15))
+                        .cornerRadius(4)
+                    }
+
+                    if categories.count > 2 {
+                        Text("+\(categories.count - 2)")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(UIColor.tertiarySystemBackground))
+                            .cornerRadius(4)
+                    }
                 }
-                .foregroundColor(Color(hex: cat.color))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color(hex: cat.color).opacity(0.15))
-                .cornerRadius(4)
             }
             
             masteryIndicator
@@ -619,11 +673,13 @@ struct VocabularyRowView: View {
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(10)
                 .background(Color.blue.opacity(0.06))
                 .overlay(
@@ -646,9 +702,10 @@ struct VocabularyRowView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(10)
                 .background(Color.blue.opacity(0.06))
                 .overlay(
@@ -1097,7 +1154,7 @@ struct FilteredVocabularyListView: View {
                 ForEach(filteredVocabularies, id: \.id) { vocabulary in
                     VocabularyRowView(
                         vocabulary: vocabulary,
-                        category: viewModel.selectedCategory,
+                        categories: categoriesForVocabulary(vocabulary),
                         onSpeak: {
                             viewModel.speakWord(vocabulary.word)
                         }
@@ -1117,5 +1174,10 @@ struct FilteredVocabularyListView: View {
                 filteredVocabularies = viewModel.filteredVocabularyForType(filterType)
             }
         }
+    }
+
+    private func categoriesForVocabulary(_ vocabulary: Vocabulary) -> [VocabularyCategory] {
+        let categoryIds = vocabulary.categoryIds.isEmpty ? (vocabulary.categoryId.map { [$0] } ?? []) : vocabulary.categoryIds
+        return viewModel.categories.filter { categoryIds.contains($0.id) }
     }
 }

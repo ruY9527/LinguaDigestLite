@@ -34,7 +34,7 @@ class ReaderViewModel: ObservableObject {
     @Published var selectedWordPartOfSpeech: String?
     @Published var selectedWordContext: String?
     @Published var wordAnalysis: WordAnalysis?
-    @Published var selectedCategoryForWord: VocabularyCategory?
+    @Published var selectedCategoryIdsForWord: Set<UUID> = []
     @Published var categories: [VocabularyCategory] = []
     @Published var selectedWordGroupedDefinitions: [(pos: String, definitions: [String])] = []
     @Published var selectedWordEnglishDefinition: String?
@@ -218,7 +218,7 @@ class ReaderViewModel: ObservableObject {
         selectedWordPartOfSpeech = nil
         selectedWordContext = nil
         wordAnalysis = nil
-        selectedCategoryForWord = nil
+        selectedCategoryIdsForWord = []
     }
     
     // MARK: - 句子翻译
@@ -296,12 +296,11 @@ class ReaderViewModel: ObservableObject {
     /// 加载分类列表
     func loadCategories() {
         categories = databaseManager.fetchAllCategories()
-        // 默认选择第一个分类（或"全部"）
-        selectedCategoryForWord = categories.first
+        selectedCategoryIdsForWord = []
     }
 
     /// 添加单词到生词本
-    func addToVocabulary(word: String, context: String?, categoryId: UUID?) {
+    func addToVocabulary(word: String, context: String?, categoryIds: [UUID]) {
         // 获取释义（优先使用离线词典）
         var definitionToSave: String? = nil
 
@@ -326,13 +325,35 @@ class ReaderViewModel: ObservableObject {
             partOfSpeech: selectedWordPartOfSpeech,
             exampleSentence: context,
             articleId: article.id,
-            categoryId: categoryId,
+            categoryIds: categoryIds,
             contextSnippet: context,
             groupedDefinitions: posDefs,
             englishDefinition: englishDef
         )
 
         databaseManager.addVocabulary(vocabulary)
+    }
+
+    var selectableCategoriesForWord: [VocabularyCategory] {
+        categories.filter { !$0.isAllCategory }
+    }
+
+    func toggleCategorySelection(for category: VocabularyCategory) {
+        guard !category.isAllCategory else { return }
+
+        if selectedCategoryIdsForWord.contains(category.id) {
+            selectedCategoryIdsForWord.remove(category.id)
+        } else {
+            selectedCategoryIdsForWord.insert(category.id)
+        }
+    }
+
+    func isCategorySelectedForWord(_ category: VocabularyCategory) -> Bool {
+        selectedCategoryIdsForWord.contains(category.id)
+    }
+
+    var selectedCategoriesForWord: [VocabularyCategory] {
+        selectableCategoriesForWord.filter { selectedCategoryIdsForWord.contains($0.id) }
     }
 
     // MARK: - 文章信息

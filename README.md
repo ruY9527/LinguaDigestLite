@@ -41,6 +41,7 @@
 - **生词本添加**：一键添加到生词本，记录原文上下文
 
 ### 📚 生词本与学习
+- **多分类支持**：生词可同时属于多个分类，方便从不同维度组织生词
 - **分类管理**：
   - 7个默认分类：全部、科技、政治、经济、文化、日常、写作
   - 支持创建自定义分类文件夹
@@ -49,6 +50,11 @@
 - **掌握度追踪**：5级掌握程度（未学习 → 精通）
 - **复习提醒**：本地通知提醒复习到期词汇
 - **上下文记忆**：保存原文句子，加深记忆
+
+### 🔤 本地离线词典
+- **ECDICT集成**：内置英文词典，支持离线查词
+- **多义词分组**：按词性分组展示释义，清晰明了
+- **英文释义**：提供英文解释，助力沉浸式学习
 
 ### 🌐 翻译与理解
 - **iOS 17.4+ 内置翻译**：支持离线翻译，完全在设备端执行
@@ -70,10 +76,11 @@
 | **开发语言** | Swift 5.9+ |
 | **UI框架** | SwiftUI + UIKit (UITextView封装) |
 | **架构模式** | MVVM |
-| **数据存储** | UserDefaults + FileManager (纯本地) |
+| **数据存储** | SQLite + FileManager (纯本地) |
 | **RSS解析** | 自定义XMLParser实现 |
 | **NLP分析** | NaturalLanguage框架 |
-| **最低版本** | iOS 16.0 |
+| **词典数据** | ECDICT SQLite数据库 |
+| **最低版本** | iOS 17.4+ (翻译功能) |
 
 ---
 
@@ -85,31 +92,47 @@ LinguaDigestLite/
 │   ├── Models/
 │   │   ├── Article.swift              # 文章模型
 │   │   ├── Feed.swift                 # RSS源模型（含备注功能）
-│   │   ├── Vocabulary.swift           # 生词模型（含SRS算法）
+│   │   ├── Vocabulary.swift           # 生词模型（含SRS算法、多分类支持）
 │   │   ├── VocabularyCategory.swift  # 生词分类模型
-│   │   └── ReadingSettings.swift      # 阅读设置
+│   │   ├── ReadingSettings.swift      # 阅读设置
+│   │   ├── RefreshLogEntry.swift      # 刷新日志模型
+│   │   └── DictionaryEntry.swift       # 词典条目模型
 │   ├── Views/
 │   │   ├── ArticleListView.swift      # 文章列表视图
 │   │   ├── ReaderView.swift           # 沉浸式阅读器
 │   │   ├── FeedListView.swift         # RSS源管理
 │   │   ├── AddFeedSheetView.swift     # 添加订阅源
-│   │   ├── VocabularyListView.swift   # 生词本（含分类管理）
-│   │   └── SettingsView.swift         # 设置页面
+│   │   ├── VocabularyListView.swift   # 生词本（多分类管理）
+│   │   ├── SettingsView.swift         # 设置页面
+│   │   └── RefreshLogView.swift       # 刷新日志查看
 │   ├── ViewModels/
 │   │   ├── ArticleViewModel.swift     # 文章数据管理
 │   │   ├── FeedViewModel.swift       # RSS源数据管理
 │   │   ├── VocabularyViewModel.swift # 生词数据管理
 │   │   └── ReaderViewModel.swift     # 阅读器状态管理
 │   ├── Services/
-│   │   ├── DatabaseManager.swift      # 数据库管理
-│   │   ├── FeedService.swift          # RSS解析服务
-│   │   ├── DictionaryService.swift    # 词典查询服务
-│   │   └── SpeechService.swift         # TTS/录音服务
+│   │   ├── DatabaseManager.swift           # SQLite数据库管理
+│   │   ├── FeedService.swift              # RSS解析服务
+│   │   ├── DictionaryService.swift         # ECDICT词典查询服务
+│   │   ├── DictionaryDatabaseManager.swift # 词典数据库管理
+│   │   ├── DictionaryDownloadService.swift # 词典下载服务
+│   │   ├── DictionaryImportService.swift  # 词典导入服务
+│   │   ├── TranslationService.swift       # 翻译服务
+│   │   ├── NotificationService.swift      # 本地通知服务
+│   │   └── SpeechService.swift           # TTS/录音服务
+│   ├── Utils/
+│   │   ├── SQLiteHelper.swift             # SQLite辅助工具
+│   │   └── L10n.swift                     # 国际化辅助
 │   ├── Resources/
-│   │   └── Assets.xcassets/           # 应用图标和颜色资源
+│   │   ├── Assets.xcassets/               # 应用图标和颜色资源
+│   │   ├── en.lproj/                     # 英文本地化
+│   │   └── zh-Hans.lproj/                # 中文本地化
 │   ├── LinguaDigestLiteApp.swift      # 应用入口
 │   └── Info.plist                     # 应用配置
 ├── LinguaDigestLite.xcodeproj/        # Xcode项目文件
+├── sql/
+│   └── schema.sql                     # 数据库Schema
+├── download/                          # 词典下载缓存
 └── README.md
 ```
 
@@ -120,7 +143,7 @@ LinguaDigestLite/
 ### 环境要求
 - macOS 14.0+
 - Xcode 15.0+
-- iOS 16.0+ 设备或模拟器
+- iOS 17.4+ 设备或模拟器 (翻译功能需要)
 
 ### 编译运行
 
@@ -168,6 +191,7 @@ LinguaDigestLite/
 ### 生词本分类系统
 
 支持创建自定义分类文件夹管理生词：
+- **多分类支持**：每个生词可同时属于多个分类
 - **默认分类**：全部、科技、政治、经济、文化、日常、写作
 - **自定义创建**：自定义名称、描述、颜色和图标
 - **分类统计**：查看各分类下的生词数量
@@ -215,7 +239,6 @@ LinguaDigestLite 是一款**纯本地应用**，高度重视用户隐私：
 
 ## 未来计划
 
-- [ ] 集成本地离线词典 (ECDICT)
 - [ ] iCloud 同步支持
 - [ ] 更多阅读主题
 - [ ] 生词自动高亮（基于词汇等级）
@@ -228,6 +251,13 @@ LinguaDigestLite 是一款**纯本地应用**，高度重视用户隐私：
 ---
 
 ## 最近更新
+
+### v1.2.0 (2026-05-03)
+- ✨ 生词本多分类支持：生词可同时属于多个分类
+- ✨ ECDICT离线词典集成，支持离线查词和多义词分组
+- ✨ 新增刷新日志功能，可查看RSS源更新历史
+- ✨ 优化文章列表空状态显示
+- 🐛 修复生词分类切换时数据刷新的问题
 
 ### v1.1.0 (2026-04-24)
 - ✨ 新增生词本分类功能，支持自定义分类文件夹

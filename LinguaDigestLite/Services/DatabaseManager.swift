@@ -19,6 +19,7 @@ class DatabaseManager {
         do {
             db = try SQLiteHelper(path: dbPath)
             try createTables()
+            ensureVocabularyCategoryIdsColumn()
             try migrateFromUserDefaults()
             syncBuiltInFeeds()
             initializeCategories()
@@ -95,6 +96,7 @@ class DatabaseManager {
                 exampleSentence TEXT,
                 articleId TEXT,
                 categoryId TEXT,
+                categoryIds TEXT,
                 englishDefinition TEXT,
                 groupedDefinitions TEXT,
                 masteredLevel INTEGER DEFAULT 0,
@@ -151,6 +153,15 @@ class DatabaseManager {
                 value TEXT
             )
         """)
+    }
+
+    private func ensureVocabularyCategoryIdsColumn() {
+        try? db?.execute("ALTER TABLE vocabulary ADD COLUMN categoryIds TEXT")
+    }
+
+    private func uniqueCategoryIds(from categoryIds: [UUID]) -> [UUID] {
+        var seen = Set<UUID>()
+        return categoryIds.filter { seen.insert($0).inserted }
     }
 
     // MARK: - UserDefaults Migration
@@ -548,8 +559,11 @@ class DatabaseManager {
     func deleteCategory(_ category: VocabularyCategory) {
         if category.isDefault { return }
         try? db?.execute("DELETE FROM categories WHERE id = ?", params: [category.id.uuidString])
-        // Move vocabulary to uncategorized
-        try? db?.execute("UPDATE vocabulary SET categoryId = NULL WHERE categoryId = ?", params: [category.id.uuidString])
+        for var vocabulary in fetchAllVocabulary() where vocabulary.belongs(to: category.id) {
+            vocabulary.categoryIds.removeAll { $0 == category.id }
+            vocabulary.categoryId = vocabulary.categoryIds.first
+            updateVocabulary(vocabulary)
+        }
     }
 
     func fetchCategory(by id: UUID) -> VocabularyCategory? {
@@ -582,17 +596,25 @@ class DatabaseManager {
             groupedJSON = nil
         }
 
+        let normalizedCategoryIds = uniqueCategoryIds(from: vocab.categoryIds + (vocab.categoryId.map { [$0] } ?? []))
+        let categoryIdsJSON: String?
+        if let data = try? JSONEncoder().encode(normalizedCategoryIds.map(\.uuidString)) {
+            categoryIdsJSON = String(data: data, encoding: .utf8)
+        } else {
+            categoryIdsJSON = nil
+        }
+
         try db?.execute("""
             INSERT OR REPLACE INTO vocabulary
             (id, word, definition, phonetic, partOfSpeech, contextSnippet, exampleSentence,
-             articleId, categoryId, englishDefinition, groupedDefinitions, masteredLevel,
+             articleId, categoryId, categoryIds, englishDefinition, groupedDefinitions, masteredLevel,
              nextReviewDate, addedAt, lastReviewedAt, reviewCount, easeFactor, interval)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, params: [
             vocab.id.uuidString, vocab.word, vocab.definition as Any,
             vocab.phonetic as Any, vocab.partOfSpeech as Any,
             vocab.contextSnippet as Any, vocab.exampleSentence as Any,
-            vocab.articleId?.uuidString as Any, vocab.categoryId?.uuidString as Any,
+            vocab.articleId?.uuidString as Any, normalizedCategoryIds.first?.uuidString as Any, categoryIdsJSON as Any,
             vocab.englishDefinition as Any, groupedJSON as Any,
             vocab.masteredLevel,
             vocab.nextReviewDate?.timeIntervalSince1970 as Any,
@@ -608,27 +630,19 @@ class DatabaseManager {
     }
 
     func fetchVocabulary(for categoryId: UUID?) -> [Vocabulary] {
-        if categoryId == nil { return fetchAllVocabulary() }
-        guard let rows = try? db?.query(
-            "SELECT * FROM vocabulary WHERE categoryId = ? ORDER BY addedAt DESC",
-            params: [categoryId!.uuidString]
-        ) else { return [] }
-        return rows.compactMap(vocabularyFromRow)
+        let allVocabulary = fetchAllVocabulary()
+        guard let categoryId else { return allVocabulary }
+        return allVocabulary.filter { $0.belongs(to: categoryId) }
     }
 
     func fetchTodayReviewVocabulary(for categoryId: UUID? = nil) -> [Vocabulary] {
         let now = Date().timeIntervalSince1970
-        let sql: String
-        let params: [Any]
-        if let categoryId {
-            sql = "SELECT * FROM vocabulary WHERE (nextReviewDate IS NULL OR nextReviewDate <= ?) AND categoryId = ? ORDER BY addedAt DESC"
-            params = [now, categoryId.uuidString]
-        } else {
-            sql = "SELECT * FROM vocabulary WHERE nextReviewDate IS NULL OR nextReviewDate <= ? ORDER BY addedAt DESC"
-            params = [now]
-        }
+        let sql = "SELECT * FROM vocabulary WHERE nextReviewDate IS NULL OR nextReviewDate <= ? ORDER BY addedAt DESC"
+        let params: [Any] = [now]
         guard let rows = try? db?.query(sql, params: params) else { return [] }
-        return rows.compactMap(vocabularyFromRow)
+        let dueVocabulary = rows.compactMap(vocabularyFromRow)
+        guard let categoryId else { return dueVocabulary }
+        return dueVocabulary.filter { $0.belongs(to: categoryId) }
     }
 
     func searchVocabulary(_ word: String) -> Vocabulary? {
@@ -652,30 +666,37 @@ class DatabaseManager {
                let ctx = vocabulary.contextSnippet, !ctx.isEmpty { updated.contextSnippet = ctx }
             if updated.exampleSentence == nil,
                let ex = vocabulary.exampleSentence, !ex.isEmpty { updated.exampleSentence = ex }
-            if updated.categoryId == nil { updated.categoryId = vocabulary.categoryId }
+            updated.categoryIds = uniqueCategoryIds(from: updated.categoryIds + vocabulary.categoryIds + (vocabulary.categoryId.map { [$0] } ?? []))
+            updated.categoryId = updated.categoryIds.first
             if let grouped = vocabulary.groupedDefinitions, !grouped.isEmpty { updated.groupedDefinitions = grouped }
             if let engDef = vocabulary.englishDefinition, !engDef.isEmpty { updated.englishDefinition = engDef }
             try? insertVocabulary(updated)
+            notifyVocabularyDidChange()
             return updated
         }
 
         var vocab = vocabulary
         vocab.word = vocabulary.word.lowercased()
         try? insertVocabulary(vocab)
+        notifyVocabularyDidChange()
         return vocab
     }
 
     func updateVocabulary(_ vocabulary: Vocabulary) {
         try? insertVocabulary(vocabulary)
+        notifyVocabularyDidChange()
     }
 
     func updateVocabularyCategory(_ vocabulary: Vocabulary, categoryId: UUID?) {
-        try? db?.execute("UPDATE vocabulary SET categoryId = ? WHERE id = ?",
-                         params: [categoryId?.uuidString as Any, vocabulary.id.uuidString])
+        var updatedVocabulary = vocabulary
+        updatedVocabulary.categoryIds = categoryId.map { [$0] } ?? []
+        updatedVocabulary.categoryId = categoryId
+        updateVocabulary(updatedVocabulary)
     }
 
     func deleteVocabulary(_ vocabulary: Vocabulary) {
         try? db?.execute("DELETE FROM vocabulary WHERE id = ?", params: [vocabulary.id.uuidString])
+        notifyVocabularyDidChange()
     }
 
     func vocabularyCount(for categoryId: UUID? = nil) -> Int {
@@ -683,8 +704,7 @@ class DatabaseManager {
             let rows = try? db?.query("SELECT COUNT(*) as cnt FROM vocabulary")
             return Int(rows?.first?["cnt"] as? Int64 ?? 0)
         }
-        let rows = try? db?.query("SELECT COUNT(*) as cnt FROM vocabulary WHERE categoryId = ?", params: [categoryId!.uuidString])
-        return Int(rows?.first?["cnt"] as? Int64 ?? 0)
+        return fetchAllVocabulary().filter { $0.belongs(to: categoryId!) }.count
     }
 
     func masteredVocabularyCount(for categoryId: UUID? = nil) -> Int {
@@ -692,11 +712,7 @@ class DatabaseManager {
             let rows = try? db?.query("SELECT COUNT(*) as cnt FROM vocabulary WHERE masteredLevel >= 4")
             return Int(rows?.first?["cnt"] as? Int64 ?? 0)
         }
-        let rows = try? db?.query(
-            "SELECT COUNT(*) as cnt FROM vocabulary WHERE masteredLevel >= 4 AND categoryId = ?",
-            params: [categoryId!.uuidString]
-        )
-        return Int(rows?.first?["cnt"] as? Int64 ?? 0)
+        return fetchAllVocabulary().filter { $0.masteredLevel >= 4 && $0.belongs(to: categoryId!) }.count
     }
 
     private func vocabularyFromRow(_ row: [String: Any]) -> Vocabulary? {
@@ -711,6 +727,18 @@ class DatabaseManager {
             groupedDefs = nil
         }
 
+        let legacyCategoryId = (row["categoryId"] as? String).flatMap(UUID.init)
+        let decodedCategoryIds: [UUID]
+        if let jsonStr = row["categoryIds"] as? String,
+           let data = jsonStr.data(using: .utf8),
+           let rawIds = try? JSONDecoder().decode([String].self, from: data) {
+            decodedCategoryIds = rawIds.compactMap(UUID.init)
+        } else if let legacyCategoryId {
+            decodedCategoryIds = [legacyCategoryId]
+        } else {
+            decodedCategoryIds = []
+        }
+
         return Vocabulary(
             id: id,
             word: word,
@@ -719,11 +747,23 @@ class DatabaseManager {
             partOfSpeech: row["partOfSpeech"] as? String,
             exampleSentence: row["exampleSentence"] as? String,
             articleId: (row["articleId"] as? String).flatMap(UUID.init),
-            categoryId: (row["categoryId"] as? String).flatMap(UUID.init),
+            categoryId: decodedCategoryIds.first ?? legacyCategoryId,
+            categoryIds: decodedCategoryIds,
             contextSnippet: row["contextSnippet"] as? String,
+            nextReviewDate: (row["nextReviewDate"] as? Double).map(Date.init(timeIntervalSince1970:)),
+            reviewCount: Int(row["reviewCount"] as? Int64 ?? 0),
+            easeFactor: row["easeFactor"] as? Double ?? 2.5,
+            interval: Int(row["interval"] as? Int64 ?? 0),
+            addedAt: (row["addedAt"] as? Double).map(Date.init(timeIntervalSince1970:)) ?? Date(),
+            lastReviewedAt: (row["lastReviewedAt"] as? Double).map(Date.init(timeIntervalSince1970:)),
+            masteredLevel: Int(row["masteredLevel"] as? Int64 ?? 0),
             groupedDefinitions: groupedDefs,
             englishDefinition: row["englishDefinition"] as? String
         )
+    }
+
+    private func notifyVocabularyDidChange() {
+        NotificationCenter.default.post(name: .vocabularyDidChange, object: nil)
     }
 
     // MARK: - Refresh Log Operations

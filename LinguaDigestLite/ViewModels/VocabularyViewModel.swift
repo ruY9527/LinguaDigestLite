@@ -59,6 +59,7 @@ class VocabularyViewModel: ObservableObject {
     /// 筛选状态
     @Published var filterType: VocabularyFilterType = .all
     @Published var showingFilteredList: Bool = false
+    @Published private(set) var hasAnyVocabulary: Bool = false
 
     private let databaseManager = DatabaseManager.shared
     private let dictionaryService = DictionaryService.shared
@@ -66,23 +67,40 @@ class VocabularyViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init() {
+        observeVocabularyChanges()
         loadCategories()
         loadVocabulary()
+    }
+
+    private func observeVocabularyChanges() {
+        NotificationCenter.default.publisher(for: .vocabularyDidChange)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.reloadData()
+            }
+            .store(in: &cancellables)
     }
 
     /// 加载分类
     func loadCategories() {
         categories = databaseManager.fetchAllCategories()
-        // 如果当前选中的分类不在列表中，或者没有选中，默认选中"全部"
+        // 如果当前选中的分类不在列表中，或者没有选中，默认选中“全部”
         if selectedCategory == nil || !categories.contains(where: { $0.id == selectedCategory?.id }) {
-            selectedCategory = categories.first { $0.name == "全部" }
+            selectedCategory = allCategory
         }
     }
 
     /// 加载所有生词
     func loadVocabulary() {
-        let categoryId = selectedCategory?.name == "全部" ? nil : selectedCategory?.id
+        let categoryId = selectedCategory?.isAllCategory == true ? nil : selectedCategory?.id
         vocabulary = databaseManager.fetchVocabulary(for: categoryId)
+        hasAnyVocabulary = categoryId == nil ? !vocabulary.isEmpty : databaseManager.vocabularyCount(for: nil) > 0
+
+        guard !vocabulary.isEmpty else {
+            todayReviewWords = []
+            return
+        }
+
         backfillVocabularyDefinitionsIfNeeded()
         todayReviewWords = databaseManager.fetchTodayReviewVocabulary(for: categoryId)
     }
@@ -134,8 +152,23 @@ class VocabularyViewModel: ObservableObject {
 
     /// 选择分类
     func selectCategory(_ category: VocabularyCategory) {
+        guard selectedCategory?.id != category.id else { return }
         selectedCategory = category
+
+        // 全局没有任何生词时，切回“全部”只需要切换空态，不必重复走数据库加载链路。
+        if category.isAllCategory && !hasAnyVocabulary {
+            vocabulary = []
+            todayReviewWords = []
+            return
+        }
+
         loadVocabulary()
+    }
+
+    /// 切换到“全部”分类
+    func showAllVocabulary() {
+        guard let category = allCategory else { return }
+        selectCategory(category)
     }
 
     /// 添加分类
@@ -165,7 +198,7 @@ class VocabularyViewModel: ObservableObject {
         loadCategories()
         // 如果删除的是当前选中的分类，切换到全部
         if selectedCategory?.id == category.id {
-            selectedCategory = categories.first { $0.name == "全部" }
+            selectedCategory = allCategory
             loadVocabulary()
         }
     }
@@ -293,10 +326,14 @@ class VocabularyViewModel: ObservableObject {
 
     /// 获取分类的生词数量
     func vocabularyCountForCategory(_ category: VocabularyCategory) -> Int {
-        if category.name == "全部" {
+        if category.isAllCategory {
             return databaseManager.vocabularyCount(for: nil)
         }
         return databaseManager.vocabularyCount(for: category.id)
+    }
+
+    private var allCategory: VocabularyCategory? {
+        categories.first(where: \.isAllCategory) ?? categories.first
     }
 
     /// 获取生词统计信息

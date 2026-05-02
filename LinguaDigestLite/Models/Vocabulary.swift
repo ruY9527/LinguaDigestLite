@@ -23,6 +23,7 @@ struct Vocabulary: Identifiable, Codable {
     var exampleSentence: String?
     var articleId: UUID?
     var categoryId: UUID? // 分类ID
+    var categoryIds: [UUID] // 多个分类ID
     var contextSnippet: String? // 原文上下文片段
     var nextReviewDate: Date?
     var reviewCount: Int
@@ -43,7 +44,15 @@ struct Vocabulary: Identifiable, Codable {
         exampleSentence: String? = nil,
         articleId: UUID? = nil,
         categoryId: UUID? = nil,
+        categoryIds: [UUID] = [],
         contextSnippet: String? = nil,
+        nextReviewDate: Date? = nil,
+        reviewCount: Int = 0,
+        easeFactor: Double = 2.5,
+        interval: Int = 0,
+        addedAt: Date = Date(),
+        lastReviewedAt: Date? = nil,
+        masteredLevel: Int = 0,
         groupedDefinitions: [PosDefinitions]? = nil,
         englishDefinition: String? = nil
     ) {
@@ -54,15 +63,30 @@ struct Vocabulary: Identifiable, Codable {
         self.partOfSpeech = partOfSpeech
         self.exampleSentence = exampleSentence
         self.articleId = articleId
-        self.categoryId = categoryId
+        let normalizedCategoryIds = Self.uniqueCategoryIds(from: categoryIds + (categoryId.map { [$0] } ?? []))
+        self.categoryIds = normalizedCategoryIds
+        self.categoryId = normalizedCategoryIds.first ?? categoryId
         self.contextSnippet = contextSnippet
-        self.reviewCount = 0
-        self.easeFactor = 2.5 // SM-2默认值
-        self.interval = 0
-        self.addedAt = Date()
-        self.masteredLevel = 0
+        self.nextReviewDate = nextReviewDate
+        self.reviewCount = reviewCount
+        self.easeFactor = easeFactor
+        self.interval = interval
+        self.addedAt = addedAt
+        self.lastReviewedAt = lastReviewedAt
+        self.masteredLevel = masteredLevel
         self.groupedDefinitions = groupedDefinitions
         self.englishDefinition = englishDefinition
+    }
+}
+
+extension Vocabulary {
+    private static func uniqueCategoryIds(from categoryIds: [UUID]) -> [UUID] {
+        var seen = Set<UUID>()
+        return categoryIds.filter { seen.insert($0).inserted }
+    }
+
+    func belongs(to categoryId: UUID) -> Bool {
+        categoryIds.contains(categoryId) || self.categoryId == categoryId
     }
 }
 
