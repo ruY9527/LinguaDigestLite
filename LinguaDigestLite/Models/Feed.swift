@@ -21,6 +21,10 @@ struct Feed: Identifiable, Codable {
     var isBuiltIn: Bool
     var createdAt: Date
     var updateInterval: Int // 更新间隔（分钟）
+    var etag: String?           // ETag from last successful HTTP response
+    var lastModified: String?   // Last-Modified header value
+    var lastRefreshTime: Date?  // Actual last successful refresh timestamp
+    var consecutiveErrors: Int  // 连续刷新失败次数
 
     init(
         id: UUID = UUID(),
@@ -31,7 +35,11 @@ struct Feed: Identifiable, Codable {
         notes: String? = nil,
         imageUrl: String? = nil,
         isBuiltIn: Bool = false,
-        updateInterval: Int = 60
+        updateInterval: Int = 60,
+        etag: String? = nil,
+        lastModified: String? = nil,
+        lastRefreshTime: Date? = nil,
+        consecutiveErrors: Int = 0
     ) {
         self.id = id
         self.title = title
@@ -44,6 +52,10 @@ struct Feed: Identifiable, Codable {
         self.isBuiltIn = isBuiltIn
         self.createdAt = Date()
         self.updateInterval = updateInterval
+        self.etag = etag
+        self.lastModified = lastModified
+        self.lastRefreshTime = lastRefreshTime
+        self.consecutiveErrors = consecutiveErrors
     }
 }
 

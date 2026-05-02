@@ -28,8 +28,8 @@ struct VocabularyListView: View {
                     vocabularyContent
                 }
             }
-            .navigationTitle("生词本")
-            .searchable(text: $searchText, prompt: "搜索单词")
+            .navigationTitle(L("nav.vocabulary"))
+            .searchable(text: $searchText, prompt: L("search.vocabulary"))
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
@@ -110,7 +110,7 @@ struct VocabularyListView: View {
             
             Spacer()
             
-            Text("\(viewModel.vocabulary.count)词")
+            Text(String(format: L("vocab.countSuffix"), viewModel.vocabulary.count))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -123,10 +123,10 @@ struct VocabularyListView: View {
     private var statisticsCard: some View {
         VStack(spacing: 12) {
             HStack(spacing: 20) {
-                StatItem(title: "总数", value: viewModel.totalVocabularyCount, color: .blue)
-                StatItem(title: "已掌握", value: viewModel.masteredVocabularyCount, color: .green)
-                StatItem(title: "学习中", value: viewModel.vocabulary.count - viewModel.masteredVocabularyCount - viewModel.todayReviewCount, color: .orange)
-                StatItem(title: "待复习", value: viewModel.todayReviewCount, color: .red)
+                StatItem(title: L("stat.total"), value: viewModel.totalVocabularyCount, color: .blue)
+                StatItem(title: L("stat.mastered"), value: viewModel.masteredVocabularyCount, color: .green)
+                StatItem(title: L("stat.learning"), value: viewModel.vocabulary.count - viewModel.masteredVocabularyCount - viewModel.todayReviewCount, color: .orange)
+                StatItem(title: L("stat.reviewDue"), value: viewModel.todayReviewCount, color: .red)
             }
 
             // 进度条
@@ -149,7 +149,7 @@ struct VocabularyListView: View {
                 } label: {
                     HStack {
                         Image(systemName: "brain.head.profile")
-                        Text("开始今日复习 (\(viewModel.todayReviewCount)词)")
+                        Text(String(format: L("action.startReview"), viewModel.todayReviewCount))
                     }
                     .font(.headline)
                     .foregroundColor(.blue)
@@ -175,20 +175,23 @@ struct VocabularyListView: View {
                     Button(role: .destructive) {
                         viewModel.deleteVocabulary(vocab)
                     } label: {
-                        Label("删除", systemImage: "trash")
+                        Label(L("common.delete"), systemImage: "trash")
                     }
                 }
                 .swipeActions(edge: .leading) {
                     Button {
                         // 移动到其他分类
                     } label: {
-                        Label("移动", systemImage: "folder")
+                        Label(L("action.move"), systemImage: "folder")
                     }
                     .tint(.blue)
                 }
             }
         }
         .listStyle(.plain)
+        .refreshable {
+            viewModel.reloadData()
+        }
     }
     
     /// 获取生词所属分类
@@ -217,18 +220,18 @@ struct VocabularyListView: View {
                 .font(.system(size: 60))
                 .foregroundColor(.gray)
 
-            Text("该分类暂无生词")
+            Text(L("empty.noVocabInCategory"))
                 .font(.headline)
                 .foregroundColor(.secondary)
 
-            Text("添加生词时可选择此分类")
+            Text(L("empty.noVocabInCategoryHint"))
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             
             Button {
                 viewModel.selectCategory(viewModel.categories.first { $0.name == "全部" } ?? viewModel.categories[0])
             } label: {
-                Text("查看全部生词")
+                Text(L("action.showAllVocab"))
                     .font(.headline)
                     .foregroundColor(.blue)
                     .padding()
@@ -246,11 +249,11 @@ struct VocabularyListView: View {
                 .font(.system(size: 60))
                 .foregroundColor(.gray)
 
-            Text("暂无生词")
+            Text(L("empty.noVocab"))
                 .font(.headline)
                 .foregroundColor(.secondary)
 
-            Text("在阅读文章时点击单词可添加到生词本")
+            Text(L("empty.noVocabHint"))
                 .font(.subheadline)
                 .foregroundColor(.secondary)
         }
@@ -309,24 +312,24 @@ struct CategoryListView: View {
                             Button(role: .destructive) {
                                 viewModel.deleteCategory(category)
                             } label: {
-                                Label("删除", systemImage: "trash")
+                                Label(L("common.delete"), systemImage: "trash")
                             }
                         }
 
                         Button {
                             // 编辑分类
                         } label: {
-                            Label("编辑", systemImage: "pencil")
+                            Label(L("common.edit"), systemImage: "pencil")
                         }
                         .tint(.blue)
                     }
                 }
             }
-            .navigationTitle("选择分类")
+            .navigationTitle(L("nav.selectCategory"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("关闭") {
+                    Button(L("common.close")) {
                         dismiss()
                     }
                 }
@@ -359,12 +362,12 @@ struct AddCategoryView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("分类信息") {
-                    TextField("分类名称", text: $name)
-                    TextField("描述（可选）", text: $description)
+                Section(L("section.categoryInfo")) {
+                    TextField(L("category.namePlaceholder"), text: $name)
+                    TextField(L("category.descPlaceholder"), text: $description)
                 }
                 
-                Section("颜色") {
+                Section(L("section.color")) {
                     HStack(spacing: 12) {
                         ForEach(VocabularyCategory.availableColors, id: \.hex) { color in
                             Button {
@@ -383,7 +386,7 @@ struct AddCategoryView: View {
                     }
                 }
                 
-                Section("图标") {
+                Section(L("section.icon")) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             ForEach(VocabularyCategory.availableIcons, id: \.self) { icon in
@@ -419,7 +422,7 @@ struct AddCategoryView: View {
                     } label: {
                         HStack {
                             Spacer()
-                            Text("创建分类")
+                            Text(L("action.createCategory"))
                                 .fontWeight(.semibold)
                             Spacer()
                         }
@@ -427,11 +430,11 @@ struct AddCategoryView: View {
                     .disabled(name.isEmpty)
                 }
             }
-            .navigationTitle("新建分类")
+            .navigationTitle(L("nav.newCategory"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
+                    Button(L("common.cancel")) {
                         dismiss()
                     }
                 }
@@ -548,12 +551,12 @@ struct VocabularyRowView: View {
                 Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle")
                     .foregroundColor(isExpanded ? .blue : .secondary)
 
-                Text(isExpanded ? "收起中文释义" : "点击查看中文释义")
+                Text(isExpanded ? L("vocab.expandDef") : L("vocab.showDef"))
                     .font(.caption)
                     .foregroundColor(isExpanded ? .blue : .secondary)
 
                 if !isExpanded {
-                    Text("共\(totalDefs)个意思")
+                    Text(String(format: L("vocab.totalDefs"), totalDefs))
                         .font(.caption2)
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 6)
@@ -569,7 +572,7 @@ struct VocabularyRowView: View {
                 Image(systemName: "exclamationmark.circle")
                     .foregroundColor(.orange)
 
-                Text("暂未找到中文释义")
+                Text(L("vocab.noDef"))
                     .font(.caption)
                     .foregroundColor(.secondary)
 
@@ -590,9 +593,12 @@ struct VocabularyRowView: View {
         if isExpanded {
             if let grouped = vocabulary.groupedDefinitions, !grouped.isEmpty {
                 // 按词性分组展示释义
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(Array(grouped.enumerated()), id: \.offset) { _, group in
-                        VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(Array(grouped.enumerated()), id: \.offset) { groupIndex, group in
+                        VStack(alignment: .leading, spacing: 6) {
+                            if groupIndex > 0 {
+                                Divider()
+                            }
                             Text(DictionaryService.displayNameForPartOfSpeech(group.pos))
                                 .font(.caption.weight(.semibold))
                                 .padding(.horizontal, 8)
@@ -602,13 +608,22 @@ struct VocabularyRowView: View {
                                 .cornerRadius(4)
 
                             ForEach(Array(group.definitions.enumerated()), id: \.offset) { index, def in
-                                (Text("\(index + 1). ").font(.caption.weight(.semibold)).foregroundColor(.blue)
-                                 + Text(def).font(.subheadline).foregroundColor(.primary))
-                                    .fixedSize(horizontal: false, vertical: true)
+                                HStack(alignment: .top, spacing: 6) {
+                                    Text("\(index + 1).")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundColor(.blue)
+                                        .frame(minWidth: 20, alignment: .trailing)
+                                    Text(def)
+                                        .font(.subheadline)
+                                        .foregroundColor(.primary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
                             }
                         }
                     }
                 }
+                .frame(maxWidth: .infinity)
                 .padding(10)
                 .background(Color.blue.opacity(0.06))
                 .overlay(
@@ -620,11 +635,20 @@ struct VocabularyRowView: View {
                 // 回退：从单字符串解析释义
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(Array(definitionItems.enumerated()), id: \.offset) { index, item in
-                        (Text("\(index + 1). ").font(.caption.weight(.semibold)).foregroundColor(.blue)
-                         + Text(item).font(.subheadline).foregroundColor(.primary))
-                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(alignment: .top, spacing: 6) {
+                            Text("\(index + 1).")
+                                .font(.caption.weight(.semibold))
+                                .foregroundColor(.blue)
+                                .frame(minWidth: 20, alignment: .trailing)
+                            Text(item)
+                                .font(.subheadline)
+                                .foregroundColor(.primary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity)
                 .padding(10)
                 .background(Color.blue.opacity(0.06))
                 .overlay(
@@ -639,19 +663,21 @@ struct VocabularyRowView: View {
     @ViewBuilder
     private var englishDefinitionSection: some View {
         if isExpanded, let englishDef = vocabulary.englishDefinition, !englishDef.isEmpty {
+            let normalizedDef = englishDef.replacingOccurrences(of: "\\n", with: "\n")
             VStack(alignment: .leading, spacing: 4) {
-                Text("English Definition")
+                Text(L("section.chineseDef"))
                     .font(.caption2)
                     .foregroundColor(.secondary)
 
                 ScrollView(.vertical, showsIndicators: true) {
-                    Text(englishDef)
+                    Text(normalizedDef)
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxHeight: 80)
             }
+            .frame(maxWidth: .infinity)
             .padding(8)
             .background(Color.gray.opacity(0.06))
             .cornerRadius(8)
@@ -663,24 +689,26 @@ struct VocabularyRowView: View {
         if let example = vocabulary.contextSnippet {
             VStack(alignment: .leading, spacing: 4) {
                 if isExpanded {
-                    Text("原文语境")
+                    Text(L("section.originalContext"))
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Text(example)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .italic()
                     .lineLimit(isExpanded ? 3 : 1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(maxWidth: .infinity)
         }
     }
     
     @ViewBuilder
     private var reviewSection: some View {
         if vocabulary.reviewCount > 0 {
-            Text("下次复习: \(vocabulary.nextReviewDescription)")
+            Text(String(format: L("vocab.nextReview"), vocabulary.nextReviewDescription))
                 .font(.caption2)
                 .foregroundColor(.orange)
         }
@@ -712,14 +740,7 @@ struct VocabularyRowView: View {
         guard let definition = vocabulary.definition, !definition.isEmpty else {
             return []
         }
-        
-        let separators = CharacterSet(charactersIn: "；;|/·")
-        let normalized = definition.replacingOccurrences(of: "、", with: "；")
-        let parts = normalized.components(separatedBy: separators)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-        
-        return parts.isEmpty ? [definition] : parts
+        return DictionaryService.shared.splitDefinitions(definition)
     }
 
     /// 掌握程度指示器
@@ -766,14 +787,14 @@ struct ReviewView: View {
                 ratingButtons
             }
             .padding()
-            .navigationTitle("复习")
+            .navigationTitle(L("nav.review"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
                         viewModel.endReview()
                     } label: {
-                        Text("结束")
+                        Text(L("action.end"))
                     }
                 }
             }
@@ -783,7 +804,7 @@ struct ReviewView: View {
     /// 进度头部
     private var progressHeader: some View {
         VStack(spacing: 8) {
-            Text("进度: \(viewModel.reviewCompletedCount) / \(viewModel.todayReviewWords.count)")
+            Text(String(format: L("review.progress"), viewModel.reviewCompletedCount, viewModel.todayReviewWords.count))
                 .font(.headline)
 
             ProgressView(value: Double(viewModel.reviewCompletedCount), total: Double(viewModel.todayReviewWords.count))
@@ -807,7 +828,7 @@ struct ReviewView: View {
 
                 // 提示文字
                 if !showingAnswer {
-                    Text("点击单词查看释义")
+                    Text(L("review.tapToSeeDef"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -846,13 +867,16 @@ struct ReviewView: View {
                         }
 
                         // 释义 - 按词性分组展示
-                        Text("释义:")
+                        Text(L("section.definitionLabel"))
                             .font(.headline)
 
                         if let grouped = word.groupedDefinitions, !grouped.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                ForEach(Array(grouped.enumerated()), id: \.offset) { _, group in
-                                    VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: 10) {
+                                ForEach(Array(grouped.enumerated()), id: \.offset) { groupIndex, group in
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        if groupIndex > 0 {
+                                            Divider()
+                                        }
                                         Text(DictionaryService.displayNameForPartOfSpeech(group.pos))
                                             .font(.caption.weight(.semibold))
                                             .padding(.horizontal, 8)
@@ -862,57 +886,38 @@ struct ReviewView: View {
                                             .cornerRadius(4)
 
                                         ForEach(Array(group.definitions.enumerated()), id: \.offset) { index, def in
-                                            (Text("\(index + 1). ").font(.caption.weight(.semibold)).foregroundColor(.blue)
-                                             + Text(def).font(.body).foregroundColor(.primary))
-                                                .fixedSize(horizontal: false, vertical: true)
+                                            HStack(alignment: .top, spacing: 6) {
+                                                Text("\(index + 1).")
+                                                    .font(.caption.weight(.semibold))
+                                                    .foregroundColor(.blue)
+                                                    .frame(minWidth: 20, alignment: .trailing)
+                                                Text(def)
+                                                    .font(.body)
+                                                    .foregroundColor(.primary)
+                                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                                    .fixedSize(horizontal: false, vertical: true)
+                                            }
                                         }
                                     }
                                 }
                             }
+                            .frame(maxWidth: .infinity)
                         } else if let savedDef = word.definition, !savedDef.isEmpty {
-                            let items = savedDef.components(separatedBy: CharacterSet(charactersIn: "；;|"))
-                                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                                .filter { !$0.isEmpty }
-                            if items.count > 1 {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                                        (Text("\(index + 1). ").font(.caption.weight(.semibold)).foregroundColor(.blue)
-                                         + Text(item).font(.body).foregroundColor(.primary))
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                }
-                            } else {
-                                Text(savedDef)
-                                    .font(.body)
-                            }
+                            definitionListView(savedDef)
                         } else if let offlineDef = DictionaryService.shared.getDefinition(for: word.word) {
-                            let items = offlineDef.components(separatedBy: CharacterSet(charactersIn: "；;|"))
-                                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                                .filter { !$0.isEmpty }
-                            if items.count > 1 {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                                        (Text("\(index + 1). ").font(.caption.weight(.semibold)).foregroundColor(.blue)
-                                         + Text(item).font(.body).foregroundColor(.primary))
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                }
-                            } else {
-                                Text(offlineDef)
-                                    .font(.body)
-                                    .foregroundColor(.blue)
-                            }
+                            definitionListView(offlineDef)
                         } else {
-                            Text("暂无释义")
+                            Text(L("review.noDef"))
                                 .font(.body)
                                 .foregroundColor(.secondary)
                         }
                         // 英文释义
                         if let englishDef = word.englishDefinition, !englishDef.isEmpty {
-                            Text("English Definition:")
+                            let normalizedDef = englishDef.replacingOccurrences(of: "\\n", with: "\n")
+                            Text(L("section.englishDefLabel"))
                                 .font(.headline)
                             ScrollView(.vertical, showsIndicators: true) {
-                                Text(englishDef)
+                                Text(normalizedDef)
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -921,7 +926,7 @@ struct ReviewView: View {
                         }
                         // 原文上下文
                         if let context = word.contextSnippet, !context.isEmpty {
-                            Text("原文:")
+                            Text(L("section.originalLabel"))
                                 .font(.headline)
                             Text(context)
                                 .font(.body)
@@ -934,7 +939,7 @@ struct ReviewView: View {
                     Button {
                         showingAnswer = true
                     } label: {
-                        Text("显示答案")
+                        Text(L("action.showAnswer"))
                             .font(.headline)
                             .foregroundColor(.blue)
                             .padding()
@@ -944,7 +949,7 @@ struct ReviewView: View {
                     }
                 }
             } else {
-                Text("复习完成！")
+                Text(L("review.completed"))
                     .font(.title)
                     .foregroundColor(.green)
             }
@@ -959,7 +964,7 @@ struct ReviewView: View {
         Group {
             if showingAnswer && viewModel.currentReviewWord != nil {
                 VStack(spacing: 12) {
-                    Text("你的掌握程度如何？")
+                    Text(L("review.ratePrompt"))
                         .font(.headline)
 
                     HStack(spacing: 8) {
@@ -992,13 +997,13 @@ struct ReviewView: View {
                         .font(.system(size: 60))
                         .foregroundColor(.green)
 
-                    Text("恭喜！今日复习完成")
+                    Text(L("review.allDone"))
                         .font(.title2)
 
                     Button {
                         viewModel.endReview()
                     } label: {
-                        Text("返回生词本")
+                        Text(L("action.backToVocab"))
                             .font(.headline)
                             .foregroundColor(.blue)
                             .padding()
@@ -1013,7 +1018,7 @@ struct ReviewView: View {
                     viewModel.skipCurrentReview()
                     showingAnswer = false
                 } label: {
-                    Text("跳过")
+                    Text(L("common.skip"))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -1024,12 +1029,12 @@ struct ReviewView: View {
     /// 评分描述
     private func ratingDescription(_ quality: Int) -> String {
         switch quality {
-        case 0: return "完全忘记"
-        case 1: return "有印象"
-        case 2: return "勉强记得"
-        case 3: return "正确"
-        case 4: return "轻松"
-        case 5: return "完美"
+        case 0: return L("rating.forget")
+        case 1: return L("rating.familiar")
+        case 2: return L("rating.barely")
+        case 3: return L("rating.correct")
+        case 4: return L("rating.easy")
+        case 5: return L("rating.perfect")
         default: return ""
         }
     }
@@ -1044,6 +1049,34 @@ struct ReviewView: View {
         case 4: return .green.opacity(0.3)
         case 5: return .blue.opacity(0.3)
         default: return .gray.opacity(0.2)
+        }
+    }
+
+    private func definitionListView(_ definition: String) -> some View {
+        let items = DictionaryService.shared.splitDefinitions(definition)
+        return Group {
+            if items.count > 1 {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                        HStack(alignment: .top, spacing: 6) {
+                            Text("\(index + 1).")
+                                .font(.caption.weight(.semibold))
+                                .foregroundColor(.blue)
+                                .frame(minWidth: 20, alignment: .trailing)
+                            Text(item)
+                                .font(.body)
+                                .foregroundColor(.primary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            } else {
+                Text(definition)
+                    .font(.body)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
     }
 }
@@ -1071,11 +1104,11 @@ struct FilteredVocabularyListView: View {
                     )
                 }
             }
-            .navigationTitle(filterType.rawValue)
+            .navigationTitle(filterType.displayName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("关闭") {
+                    Button(L("common.close")) {
                         dismiss()
                     }
                 }

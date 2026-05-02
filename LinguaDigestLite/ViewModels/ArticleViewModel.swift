@@ -121,7 +121,7 @@ class ArticleViewModel: ObservableObject {
         } catch {
             await MainActor.run {
                 isLoading = false
-                errorMessage = "获取全文失败: \(error.localizedDescription)"
+                errorMessage = String(format: L("error.fetchFailed"), error.localizedDescription)
             }
             return article
         }

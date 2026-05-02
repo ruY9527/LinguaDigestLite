@@ -60,7 +60,7 @@ struct ReminderSettings: Codable {
         self.dailyReviewEnabled = false
         self.reminderHour = 9      // 默认早上9点
         self.reminderMinute = 0
-        self.reminderTitle = "每日复习提醒"
+        self.reminderTitle = L("setting.dailyReminder")
     }
     
     /// 提醒时间字符串
@@ -86,10 +86,10 @@ enum ReadingTheme: String, Codable, CaseIterable {
     
     var displayName: String {
         switch self {
-        case .light: return "日间模式"
-        case .dark: return "夜间模式"
-        case .sepia: return "护眼黄纸"
-        case .green: return "护眼绿"
+        case .light: return L("theme.light")
+        case .dark: return L("theme.dark")
+        case .sepia: return L("theme.sepia")
+        case .green: return L("theme.green")
         }
     }
     
@@ -122,11 +122,11 @@ enum VocabularyLevel: String, Codable, CaseIterable {
     
     var displayName: String {
         switch self {
-        case .beginner: return "初学者 (Oxford 1000)"
-        case .elementary: return "初级 (Oxford 2000)"
-        case .intermediate: return "中级 (Oxford 3000)"
-        case .advanced: return "高级 (Oxford 5000)"
-        case .expert: return "专家级 (全词表)"
+        case .beginner: return L("level.beginnerFull")
+        case .elementary: return L("level.elementaryFull")
+        case .intermediate: return L("level.intermediateFull")
+        case .advanced: return L("level.advancedFull")
+        case .expert: return L("level.expertFull")
         }
     }
     

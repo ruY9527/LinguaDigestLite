@@ -1,0 +1,442 @@
+/* English localization strings */
+
+/* === Common === */
+"app.name" = "LinguaDigestLite";
+"common.ok" = "OK";
+"common.cancel" = "Cancel";
+"common.close" = "Close";
+"common.done" = "Done";
+"common.delete" = "Delete";
+"common.clear" = "Clear";
+"common.add" = "Add";
+"common.edit" = "Edit";
+"common.save" = "Save";
+"common.skip" = "Skip";
+"common.all" = "All";
+"common.error" = "Error";
+"common.unknown" = "Unknown";
+"common.loading" = "Loading...";
+
+/* === Tab Bar === */
+"tab.articles" = "Articles";
+"tab.feeds" = "Feeds";
+"tab.vocabulary" = "Vocabulary";
+"tab.settings" = "Settings";
+
+/* === Article List === */
+"nav.articles" = "Articles";
+"search.articles" = "Search articles";
+"filter.all" = "All";
+"filter.unread" = "Unread";
+"filter.favorites" = "Favorites";
+"action.unfavorite" = "Unfavorite";
+"action.favorite" = "Favorite";
+"source.info" = "Source Info";
+"source.label" = "Source";
+"source.author" = "Author";
+"source.published" = "Published";
+"source.synced" = "Synced";
+"source.progress" = "Progress";
+"action.openOriginal" = "Open Original";
+"action.copyLink" = "Copy Link";
+"source.unknown" = "Unknown Source";
+"date.unknown" = "Unknown";
+"empty.noFavorites" = "No Favorites";
+"empty.noFavoritesHint" = "Tap the star icon while reading to add favorites";
+"action.browseAll" = "Browse All Articles";
+"empty.noUnread" = "No Unread Articles";
+"empty.noUnreadHint" = "All articles have been read";
+"empty.noArticles" = "No Articles";
+"empty.noArticlesHint" = "Go to the Feeds tab to add RSS sources";
+"action.goToAddFeed" = "Add Feed";
+
+/* === Feed List === */
+"nav.feeds" = "Feeds";
+"action.resubscribeAll" = "Resubscribe All Built-in Feeds?";
+"action.resubscribe" = "Resubscribe";
+"alert.resubscribeMsg" = "This will rebuild all built-in feeds and re-fetch articles.";
+"section.builtInFeeds" = "Built-in Feeds";
+"section.myFeeds" = "My Feeds";
+"action.refresh" = "Refresh";
+"action.refreshing" = "Refreshing";
+"action.disable" = "Disable";
+"action.enable" = "Enable";
+"status.processing" = "Processing...";
+"empty.noFeeds" = "No Feeds";
+"empty.noFeedsHint" = "Add RSS feeds to get articles";
+"action.addFeed" = "Add Feed";
+"status.refreshing" = "Refreshing...";
+"status.refreshSuccess" = "Refreshed · %d new";
+"status.refreshSuccessNoNew" = "Refreshed · No new articles";
+"status.lastUpdated" = "Last updated: %@";
+"status.refreshFailed" = "Refresh failed";
+"refreshSummary.hasNew" = "%1$@: %2$d new articles";
+"refreshSummary.noNew" = "%@: No new articles";
+"refreshSummary.failed" = "%@: Refresh failed";
+"refreshSummary.failedDetail" = "Refresh failed: %@";
+"refreshSummary.partial" = "%1$d succeeded · %2$d failed (%3$@)";
+"refreshSummary.allSuccess" = "All %1$d succeeded · %2$d new";
+"refreshSummary.allSuccessNoNew" = "All %d succeeded · No new articles";
+"refreshSummary.failedNames" = "%1$@ and %2$d more";
+"list.separator" = ", ";
+"source.progressValue" = "%d%%";
+
+/* === Add Feed === */
+"nav.addFeed" = "Add Feed";
+"feed.info" = "RSS Feed Info";
+"feed.nameOptional" = "Name (optional)";
+"feed.name" = "Name";
+"feed.url" = "RSS URL";
+"feed.notes" = "Notes";
+"feed.notesPlaceholder" = "Add notes (optional)";
+"feed.notesHint" = "Add notes to help identify and categorize this feed";
+"status.adding" = "Adding...";
+"alert.addFailed" = "Add Failed";
+"section.exampleFeeds" = "Example RSS Feeds";
+"feed.note.bbc" = "BBC News";
+"feed.note.guardian" = "The Guardian World News";
+"feed.note.npr" = "NPR News";
+"feed.note.tc" = "Tech & Startup News";
+"feed.note.wired" = "Tech & Culture Magazine";
+"feed.note.mit" = "MIT Technology Review";
+
+/* === Refresh Log === */
+"nav.refreshLog" = "Refresh Log";
+"action.clearAll" = "Clear All";
+"alert.clearLog" = "Clear Log";
+"alert.clearLogMsg" = "This will delete all refresh log records";
+"empty.noLogs" = "No Refresh Records";
+"empty.noLogsHint" = "Pull down to refresh feeds, and records will appear here";
+"section.filterByFeed" = "Filter by Feed";
+"log.addedArticles" = "%d new articles";
+"status.refreshSuccessShort" = "Refreshed";
+
+/* === Reader === */
+"action.share" = "Share";
+"action.openInBrowser" = "Open in Browser";
+"action.selectTranslation" = "Select Translation Service";
+"status.loadingContent" = "Loading content...";
+"error.loadFailed" = "Unable to load article";
+"meta.readTime" = "~%d min";
+"help.doubleTap" = "Double-tap any word in the text to look it up and add to vocabulary.";
+"card.summary" = "Summary";
+"status.speaking" = "Speaking...";
+"lemma.label" = "Lemma: %@";
+"section.definitions" = "Definitions";
+"section.context" = "Context";
+"hint.systemDict" = "iOS system dictionary has detailed definitions";
+"section.chineseDef" = "Chinese Definition";
+"section.addToCategory" = "Add to Category";
+"action.addToVocab" = "Add to Vocabulary";
+"action.translateSentence" = "Translate Sentence";
+"category.addLabel" = "Add to: %@";
+"section.quickDef" = "Quick Definition";
+"hint.systemDictSwitched" = "Switched to the full iOS English-Chinese dictionary below.";
+"sheet.originalText" = "Original Text";
+"sheet.translationServices" = "Select Translation Service";
+"hint.translationRedirect" = "Tap a translation service to open it for translation";
+"nav.sentenceTranslation" = "Sentence Translation";
+
+/* === Vocabulary === */
+"nav.vocabulary" = "Vocabulary";
+"search.vocabulary" = "Search words";
+"stat.total" = "Total";
+"stat.mastered" = "Mastered";
+"stat.learning" = "Learning";
+"stat.reviewDue" = "Due";
+"action.startReview" = "Start Review (%d words)";
+"action.move" = "Move";
+"empty.noVocabInCategory" = "No words in this category";
+"empty.noVocabInCategoryHint" = "Words can be assigned to this category when added";
+"action.showAllVocab" = "Show All Words";
+"empty.noVocab" = "No Vocabulary";
+"empty.noVocabHint" = "Double-tap words while reading to add them here";
+"section.categoryInfo" = "Category Info";
+"category.namePlaceholder" = "Category Name";
+"category.descPlaceholder" = "Description (optional)";
+"section.color" = "Color";
+"section.icon" = "Icon";
+"action.createCategory" = "Create Category";
+"nav.newCategory" = "New Category";
+"nav.selectCategory" = "Select Category";
+"vocab.expandDef" = "Collapse Chinese Definition";
+"vocab.showDef" = "Tap to show Chinese Definition";
+"vocab.defCount" = "%d meanings";
+"vocab.totalDefs" = "%d meanings";
+"vocab.noDef" = "No Chinese definition found";
+"section.originalContext" = "Original Context";
+"vocab.nextReview" = "Next review: %@";
+"nav.review" = "Review";
+"action.end" = "End";
+"review.progress" = "Progress: %d/%d";
+"review.tapToSeeDef" = "Tap word to see definition";
+"section.definitionLabel" = "Definition:";
+"review.noDef" = "No definition";
+"section.englishDefLabel" = "English Definition:";
+"section.originalLabel" = "Original:";
+"action.showAnswer" = "Show Answer";
+"review.completed" = "Review Complete!";
+"review.ratePrompt" = "How well did you know it?";
+"review.allDone" = "All done for today!";
+"action.backToVocab" = "Back to Vocabulary";
+"rating.forget" = "Forgot";
+"rating.familiar" = "Vague";
+"rating.barely" = "Barely";
+"rating.correct" = "Correct";
+"rating.easy" = "Easy";
+"rating.perfect" = "Perfect";
+
+/* === Settings === */
+"nav.settings" = "Settings";
+"alert.importResult" = "Import Result";
+"alert.importComplete" = "Import Complete";
+"alert.confirmClear" = "Confirm Clear";
+"alert.clearCustomDictMsg" = "Are you sure you want to delete all custom entries? This cannot be undone.";
+"section.reading" = "Reading Settings";
+"setting.fontSize" = "Font Size";
+"setting.lineSpacing" = "Line Spacing";
+"setting.paragraphSpacing" = "Paragraph Spacing: %d";
+"setting.pageMargin" = "Page Margin: %d";
+"setting.font" = "Font";
+"setting.readingTheme" = "Reading Theme";
+"section.tts" = "Text-to-Speech";
+"setting.voice" = "Voice";
+"setting.americanEnglish" = "American English";
+"setting.speechRate" = "Speech Rate";
+"section.learning" = "Learning Settings";
+"setting.autoHighlight" = "Auto-highlight Vocabulary";
+"setting.showPhonetic" = "Show Phonetic";
+"setting.vocabLevel" = "Vocabulary Level";
+"setting.dailyReminder" = "Daily Review Reminder";
+"setting.reminderTime" = "Reminder Time";
+"setting.todayReview" = "Today's Reviews";
+"setting.reviewWordCount" = "%d words";
+"setting.reviewCountSuffix" = "%d words";
+"action.sendTestReminder" = "Send Test Reminder";
+"section.ecdict" = "ECDICT Dictionary";
+"setting.dictStatus" = "Dictionary Status";
+"status.ready" = "Ready";
+"status.notFound" = "Not Found";
+"setting.entryCount" = "Entry Count";
+"setting.entryCountSuffix" = "%d entries";
+"setting.ecdictDesc" = "ECDICT is an open-source English-Chinese dictionary with 770K+ entries, supporting offline lookup.";
+"section.dictManagement" = "Dictionary Management";
+"setting.customEntries" = "Custom Entries";
+"setting.importMode" = "Import Mode";
+"action.importDict" = "Import Dictionary";
+"action.exportCustomDict" = "Export Custom Dictionary";
+"action.dictFormatInfo" = "Dictionary Format Info";
+"action.clearCustomEntries" = "Clear Custom Entries";
+"section.downloadSample" = "Download Sample Dictionary";
+"section.about" = "About";
+"setting.version" = "Version";
+"setting.appName" = "App Name";
+"action.resetAll" = "Reset All Settings";
+"speed.slow" = "Slow";
+"speed.medium" = "Medium";
+"speed.fast" = "Fast";
+"speed.veryFast" = "Very Fast";
+"nav.selectFont" = "Select Font";
+"nav.selectTheme" = "Select Theme";
+"nav.selectVoice" = "Select Voice";
+"nav.vocabLevel" = "Vocabulary Level";
+"level.beginner" = "Basic vocabulary for beginners";
+"level.elementary" = "Common words for basic reading";
+"level.intermediate" = "Advanced words for most articles";
+"level.advanced" = "High-level vocabulary for complex content";
+"level.expert" = "Full vocabulary table";
+"sheet.importDict" = "Import Custom Dictionary";
+"sheet.importDesc" = "Supports JSON, CSV, and TXT dictionary files";
+"sheet.importModeLabel" = "Current import mode: %@";
+"action.selectFile" = "Select File";
+"label.selectedFile" = "Selected file:";
+"action.importing" = "Importing...";
+"action.startImport" = "Start Import";
+"nav.importDict" = "Import Dictionary";
+"importMode.merge" = "Add new words, merge definitions for existing ones";
+"importMode.overwrite" = "Existing entries will be overwritten";
+"importMode.addOnly" = "Only add new entries, keep existing ones unchanged";
+"format.json" = "JSON Format (Recommended)";
+"format.csv" = "CSV Format";
+"format.txt" = "TXT Format (Simple)";
+"section.fieldDesc" = "Field Description";
+"field.required" = "Required";
+"field.optional" = "Optional";
+"field.word" = "The word itself";
+"field.phonetic" = "Phonetic (American)";
+"field.pos" = "Part of speech (n./v./adj.)";
+"field.definition" = "Chinese definition, separate multiple with semicolons";
+"field.example" = "Example sentence";
+"field.frequency" = "Frequency level (1-5)";
+"field.level" = "Vocabulary level (CET4/CET6/GRE)";
+"section.notes" = "Notes";
+"note.fullDefinition" = "Definition field supports multiple meanings, separated by semicolons";
+"note.csvQuotes" = "In CSV format, fields containing commas must be wrapped in double quotes";
+"note.txtSeparator" = "TXT format uses pipe (|) as field separator";
+"note.ipaPhonetic" = "Phonetics should use IPA format, e.g. /həˈləʊ/";
+"note.largeFileWait" = "Please wait patiently when importing large files";
+"nav.dictFormatInfo" = "Dictionary Format Info";
+"sheet.exportDict" = "Export Custom Dictionary";
+"sheet.exportDesc" = "Export your custom entries as a file for backup or sharing";
+"label.customEntryCount" = "Custom entries:";
+"label.exportFormat" = "Export format:";
+"setting.exportFormat" = "Export Format";
+"action.exporting" = "Exporting...";
+"action.exportAndShare" = "Export & Share";
+"nav.exportDict" = "Export Dictionary";
+
+/* === Dictionary Service === */
+"pos.definitions" = "Definitions";
+"pos.noun" = "Noun";
+"pos.verb" = "Verb";
+"pos.adjective" = "Adjective";
+"pos.adverb" = "Adverb";
+"pos.pronoun" = "Pronoun";
+"pos.preposition" = "Preposition";
+"pos.conjunction" = "Conjunction";
+"pos.determiner" = "Determiner";
+"pos.interjection" = "Interjection";
+"pos.computing" = "Computing";
+"pos.medical" = "Medical";
+"pos.internet" = "Internet";
+"pos.electronics" = "Electronics";
+"pos.legal" = "Legal";
+"pos.economics" = "Economics";
+"pos.chemistry" = "Chemistry";
+"pos.physics" = "Physics";
+"pos.mathematics" = "Mathematics";
+"pos.biology" = "Biology";
+"pos.pharmacy" = "Pharmacy";
+
+/* === Error Messages === */
+"error.http" = "HTTP Error: %d";
+"error.invalidURL" = "Invalid URL";
+"error.invalidResponse" = "Invalid server response";
+"error.parseError" = "Parse error: %@";
+"error.encoding" = "Encoding error";
+"error.network" = "Network error: %@";
+"error.fetchFailed" = "Failed to fetch content: %@";
+"error.addFeedFailed" = "Failed to add feed: %@";
+
+/* === Refresh Log Errors === */
+"httpError.404" = "HTTP 404 · Not Found";
+"httpError.504" = "HTTP 504 · Gateway Timeout";
+"httpError.503" = "HTTP 503 · Service Unavailable";
+"httpError.502" = "HTTP 502 · Bad Gateway";
+"httpError.403" = "HTTP 403 · Forbidden";
+"httpError.401" = "HTTP 401 · Unauthorized";
+"httpError.default" = "HTTP %d";
+"error.timeout" = "Request timed out";
+"error.connectionFailed" = "Cannot connect to server";
+"error.unknown" = "Unknown error";
+
+/* === Vocabulary Model === */
+"mastery.notStarted" = "Not Started";
+"mastery.unlearned" = "Unlearned";
+"mastery.poor" = "Poor";
+"mastery.learning" = "Learning";
+"mastery.familiar" = "Familiar";
+"mastery.proficient" = "Proficient";
+"mastery.mastered" = "Mastered";
+"mastery.unknown" = "Unknown";
+
+/* === Article Model === */
+"article.noPreview" = "No preview available";
+"article.unknownDate" = "Unknown date";
+
+/* === Vocabulary Stats === */
+"vocab.countSuffix" = "%d words";
+
+/* === Translation Services === */
+"translation.system" = "System Translation";
+"translation.google" = "Google Translate";
+"translation.baidu" = "Baidu Translate";
+"translation.deepl" = "DeepL Translate";
+
+/* === Import Modes === */
+"importMode.enhance" = "Enhance";
+"importMode.overwriteMode" = "Overwrite";
+"importMode.addOnlyMode" = "Add Only";
+
+/* === Refresh Summary === */
+"summary.nSuccess.nFail" = "%d succeeded · %d failed (%@)";
+"summary.allSuccess.nNew" = "All %d succeeded · %d new";
+"summary.allSuccess.noNew" = "All %d succeeded · No new articles";
+"summary.feedRefreshFailed" = "%@: Refresh failed";
+"summary.feedNewArticles" = "%@: %d new articles";
+"summary.feedNoNew" = "%@: No new articles";
+
+/* === Default Categories === */
+"category.all" = "All";
+"category.allDesc" = "All vocabulary";
+"category.tech" = "Technology";
+"category.techDesc" = "Technology-related vocabulary";
+"category.politics" = "Politics";
+"category.politicsDesc" = "Politics-related vocabulary";
+"category.economy" = "Economy";
+"category.economyDesc" = "Finance & economy vocabulary";
+"category.culture" = "Culture";
+"category.cultureDesc" = "Arts & culture vocabulary";
+"category.daily" = "Daily";
+"category.dailyDesc" = "Everyday vocabulary";
+"category.writing" = "Writing";
+"category.writingDesc" = "Common writing vocabulary";
+
+/* === Theme Names === */
+"theme.light" = "Light";
+"theme.dark" = "Dark";
+"theme.sepia" = "Sepia";
+"theme.green" = "Green";
+
+/* === Vocabulary Levels === */
+"level.beginnerFull" = "Beginner (Oxford 1000)";
+"level.elementaryFull" = "Elementary (Oxford 2000)";
+"level.intermediateFull" = "Intermediate (Oxford 3000)";
+"level.advancedFull" = "Advanced (Oxford 5000)";
+"level.expertFull" = "Expert (Full Table)";
+
+/* === Import Results === */
+"import.success" = "Imported %d entries";
+"import.skipped" = "Skipped %d existing";
+"import.failed" = "Failed %d entries";
+"import.resultFormat" = "Success: %d, Skipped: %d, Failed: %d";
+
+/* === Default Font === */
+"default.font" = "System Font";
+"custom.font" = "Custom";
+
+/* === FeedViewModel Errors === */
+"error.networkFailed" = "Network connection failed";
+"error.invalidLink" = "Invalid link";
+"error.serverError" = "Server response error";
+"error.contentParseFailed" = "Content parse failed";
+"error.encodingError" = "Encoding error";
+
+/* === Color Names === */
+"color.blue" = "Blue";
+"color.purple" = "Purple";
+"color.orange" = "Orange";
+"color.red" = "Red";
+"color.green" = "Green";
+"color.pink" = "Pink";
+"color.teal" = "Teal";
+"color.indigo" = "Indigo";
+"color.yellow" = "Yellow";
+"color.brown" = "Brown";
+"color.gray" = "Gray";
+
+/* === Reader Hints === */
+"hint.systemDictPrompt" = "Tap \"Open Original\" below to view detailed definitions in the system dictionary";
+
+/* === Vocabulary Stats === */
+"vocab.statsSummary" = "Total %1$d words: %2$d mastered, %3$d learning, %4$d new, %5$d due today";
+
+/* === Translation Errors === */
+"error.translationUnavailable" = "System translation unavailable";
+"error.textTooShort" = "Text too short to translate";
+"error.translationNetwork" = "Network error, check connection";
+"error.translationFailed" = "Translation failed";
+
+/* === Import Detail === */
+"import.resultDetail" = "Imported! Total %1$d entries: %2$d new, %3$d updated, %4$d skipped";
+"import.failedDetail" = "Import failed: %@";

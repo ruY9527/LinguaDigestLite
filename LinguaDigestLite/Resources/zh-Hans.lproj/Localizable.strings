@@ -1,0 +1,442 @@
+/* 中文本地化字符串 */
+
+/* === 通用 === */
+"app.name" = "LinguaDigestLite";
+"common.ok" = "确定";
+"common.cancel" = "取消";
+"common.close" = "关闭";
+"common.done" = "完成";
+"common.delete" = "删除";
+"common.clear" = "清除";
+"common.add" = "添加";
+"common.edit" = "编辑";
+"common.save" = "保存";
+"common.skip" = "跳过";
+"common.all" = "全部";
+"common.error" = "错误";
+"common.unknown" = "未知";
+"common.loading" = "加载中...";
+
+/* === Tab Bar === */
+"tab.articles" = "文章";
+"tab.feeds" = "订阅";
+"tab.vocabulary" = "生词本";
+"tab.settings" = "设置";
+
+/* === 文章列表 === */
+"nav.articles" = "文章";
+"search.articles" = "搜索文章";
+"filter.all" = "全部";
+"filter.unread" = "未读";
+"filter.favorites" = "收藏";
+"action.unfavorite" = "取消收藏";
+"action.favorite" = "收藏";
+"source.info" = "来源信息";
+"source.label" = "来源";
+"source.author" = "作者";
+"source.published" = "发布";
+"source.synced" = "同步";
+"source.progress" = "进度";
+"action.openOriginal" = "打开原文";
+"action.copyLink" = "复制链接";
+"source.unknown" = "未知来源";
+"date.unknown" = "未知";
+"empty.noFavorites" = "暂无收藏文章";
+"empty.noFavoritesHint" = "浏览文章时点击星标即可收藏";
+"action.browseAll" = "浏览全部文章";
+"empty.noUnread" = "没有未读文章";
+"empty.noUnreadHint" = "所有文章都已阅读完毕";
+"empty.noArticles" = "暂无文章";
+"empty.noArticlesHint" = "请前往订阅页添加RSS订阅源";
+"action.goToAddFeed" = "前往添加订阅源";
+
+/* === 订阅源列表 === */
+"nav.feeds" = "订阅源";
+"action.resubscribeAll" = "重新订阅全部内置RSS？";
+"action.resubscribe" = "重新订阅";
+"alert.resubscribeMsg" = "这会重建所有内置订阅源，并重新抓取文章内容。";
+"section.builtInFeeds" = "内置订阅源";
+"section.myFeeds" = "我的订阅源";
+"action.refresh" = "刷新";
+"action.refreshing" = "刷新中";
+"action.disable" = "禁用";
+"action.enable" = "启用";
+"status.processing" = "处理中...";
+"empty.noFeeds" = "暂无订阅源";
+"empty.noFeedsHint" = "请添加RSS订阅源以获取文章内容";
+"action.addFeed" = "添加订阅源";
+"status.refreshing" = "正在刷新...";
+"status.refreshSuccess" = "刷新成功 · 新增%d篇";
+"status.refreshSuccessNoNew" = "刷新成功 · 无新文章";
+"status.lastUpdated" = "最后更新: %@";
+"status.refreshFailed" = "刷新失败";
+"refreshSummary.hasNew" = "%1$@: 新增 %2$d 篇文章";
+"refreshSummary.noNew" = "%@: 无新文章";
+"refreshSummary.failed" = "%@: 刷新失败";
+"refreshSummary.failedDetail" = "刷新失败: %@";
+"refreshSummary.partial" = "%1$d个成功 · %2$d个失败（%3$@）";
+"refreshSummary.allSuccess" = "%1$d个全部成功 · 新增%2$d篇";
+"refreshSummary.allSuccessNoNew" = "%d个全部成功 · 无新文章";
+"refreshSummary.failedNames" = "%1$@等%2$d个";
+"list.separator" = "、";
+"source.progressValue" = "%d%%";
+
+/* === 添加订阅源 === */
+"nav.addFeed" = "添加订阅源";
+"feed.info" = "RSS源信息";
+"feed.nameOptional" = "名称（可选）";
+"feed.name" = "名称";
+"feed.url" = "RSS链接";
+"feed.notes" = "备注";
+"feed.notesPlaceholder" = "添加备注（可选）";
+"feed.notesHint" = "可以为这个订阅源添加备注，方便识别和分类";
+"status.adding" = "正在添加...";
+"alert.addFailed" = "添加失败";
+"section.exampleFeeds" = "示例RSS源";
+"feed.note.bbc" = "英国广播公司新闻";
+"feed.note.guardian" = "英国卫报世界新闻";
+"feed.note.npr" = "美国国家公共电台";
+"feed.note.tc" = "科技创业新闻";
+"feed.note.wired" = "科技文化杂志";
+"feed.note.mit" = "麻省理工科技评论";
+
+/* === 刷新日志 === */
+"nav.refreshLog" = "刷新日志";
+"action.clearAll" = "清空";
+"alert.clearLog" = "清空日志";
+"alert.clearLogMsg" = "将清除所有刷新日志记录";
+"empty.noLogs" = "暂无刷新记录";
+"empty.noLogsHint" = "下拉刷新订阅源后，刷新记录将显示在这里";
+"section.filterByFeed" = "按订阅源筛选";
+"log.addedArticles" = "新增 %d 篇文章";
+"status.refreshSuccessShort" = "刷新成功";
+
+/* === 阅读器 === */
+"action.share" = "分享";
+"action.openInBrowser" = "在浏览器中打开";
+"action.selectTranslation" = "选择翻译服务";
+"status.loadingContent" = "加载全文...";
+"error.loadFailed" = "无法加载文章内容";
+"meta.readTime" = "约%d分钟";
+"help.doubleTap" = "双击正文中的单词即可查词并加入生词本。";
+"card.summary" = "摘要";
+"status.speaking" = "正在朗读...";
+"lemma.label" = "原形: %@";
+"section.definitions" = "释义";
+"section.context" = "原文上下文";
+"hint.systemDict" = "iOS系统词典有详细释义";
+"section.chineseDef" = "中文释义";
+"section.addToCategory" = "添加到分类";
+"action.addToVocab" = "加入生词本";
+"action.translateSentence" = "翻译句子";
+"category.addLabel" = "加入分类: %@";
+"section.quickDef" = "快速释义";
+"hint.systemDictSwitched" = "下方已切换到系统完整英汉词典。";
+"sheet.originalText" = "原文";
+"sheet.translationServices" = "选择翻译服务";
+"hint.translationRedirect" = "点击翻译服务将跳转到对应应用进行翻译";
+"nav.sentenceTranslation" = "句子翻译";
+
+/* === 生词本 === */
+"nav.vocabulary" = "生词本";
+"search.vocabulary" = "搜索单词";
+"stat.total" = "总数";
+"stat.mastered" = "已掌握";
+"stat.learning" = "学习中";
+"stat.reviewDue" = "待复习";
+"action.startReview" = "开始今日复习 (%d词)";
+"action.move" = "移动";
+"empty.noVocabInCategory" = "该分类暂无生词";
+"empty.noVocabInCategoryHint" = "添加生词时可选择此分类";
+"action.showAllVocab" = "查看全部生词";
+"empty.noVocab" = "暂无生词";
+"empty.noVocabHint" = "在阅读文章时点击单词可添加到生词本";
+"section.categoryInfo" = "分类信息";
+"category.namePlaceholder" = "分类名称";
+"category.descPlaceholder" = "描述（可选）";
+"section.color" = "颜色";
+"section.icon" = "图标";
+"action.createCategory" = "创建分类";
+"nav.newCategory" = "新建分类";
+"nav.selectCategory" = "选择分类";
+"vocab.expandDef" = "收起中文释义";
+"vocab.showDef" = "点击查看中文释义";
+"vocab.defCount" = "共%d个意思";
+"vocab.totalDefs" = "共%d个意思";
+"vocab.noDef" = "暂未找到中文释义";
+"section.originalContext" = "原文语境";
+"vocab.nextReview" = "下次复习: %@";
+"nav.review" = "review";
+"action.end" = "结束";
+"review.progress" = "进度: %d/%d";
+"review.tapToSeeDef" = "点击单词查看释义";
+"section.definitionLabel" = "释义:";
+"review.noDef" = "暂无释义";
+"section.englishDefLabel" = "英文释义:";
+"section.originalLabel" = "原文:";
+"action.showAnswer" = "显示答案";
+"review.completed" = "复习完成！";
+"review.ratePrompt" = "你的掌握程度如何？";
+"review.allDone" = "恭喜！今日复习完成";
+"action.backToVocab" = "返回生词本";
+"rating.forget" = "完全忘记";
+"rating.familiar" = "有印象";
+"rating.barely" = "勉强记得";
+"rating.correct" = "正确";
+"rating.easy" = "轻松";
+"rating.perfect" = "完美";
+
+/* === 设置 === */
+"nav.settings" = "设置";
+"alert.importResult" = "导入结果";
+"alert.importComplete" = "导入完成";
+"alert.confirmClear" = "确认清除";
+"alert.clearCustomDictMsg" = "确定要清除所有自定义词条吗？此操作不可撤销。";
+"section.reading" = "阅读设置";
+"setting.fontSize" = "字体大小";
+"setting.lineSpacing" = "行间距";
+"setting.paragraphSpacing" = "段落间距: %d";
+"setting.pageMargin" = "页面边距: %d";
+"setting.font" = "字体";
+"setting.readingTheme" = "阅读主题";
+"section.tts" = "语音朗读";
+"setting.voice" = "语音";
+"setting.americanEnglish" = "美式英语";
+"setting.speechRate" = "朗读速度";
+"section.learning" = "学习设置";
+"setting.autoHighlight" = "自动高亮生词";
+"setting.showPhonetic" = "显示音标";
+"setting.vocabLevel" = "词汇等级";
+"setting.dailyReminder" = "每日复习提醒";
+"setting.reminderTime" = "提醒时间";
+"setting.todayReview" = "今日待复习";
+"setting.reviewWordCount" = "%d 词";
+"setting.reviewCountSuffix" = "%d 词";
+"action.sendTestReminder" = "发送测试提醒";
+"section.ecdict" = "ECDICT 完整词典";
+"setting.dictStatus" = "词典状态";
+"status.ready" = "已就绪";
+"status.notFound" = "未找到";
+"setting.entryCount" = "词条数量";
+"setting.entryCountSuffix" = "%d 条";
+"setting.ecdictDesc" = "ECDICT 是开源英汉词典，包含 77 万+词条，支持离线查询。";
+"section.dictManagement" = "词典管理";
+"setting.customEntries" = "自定义词条";
+"setting.importMode" = "导入模式";
+"action.importDict" = "导入词典";
+"action.exportCustomDict" = "导出自定义词典";
+"action.dictFormatInfo" = "词典格式说明";
+"action.clearCustomEntries" = "清除自定义词条";
+"section.downloadSample" = "下载示例词典文件";
+"section.about" = "关于";
+"setting.version" = "版本";
+"setting.appName" = "应用名称";
+"action.resetAll" = "重置所有设置";
+"speed.slow" = "慢速";
+"speed.medium" = "适中";
+"speed.fast" = "快速";
+"speed.veryFast" = "极快";
+"nav.selectFont" = "选择字体";
+"nav.selectTheme" = "选择主题";
+"nav.selectVoice" = "选择语音";
+"nav.vocabLevel" = "词汇等级";
+"level.beginner" = "基础词汇，适合初学者";
+"level.elementary" = "常用词汇，具备基本阅读能力";
+"level.intermediate" = "进阶词汇，能够阅读多数文章";
+"level.advanced" = "高级词汇，能够理解复杂内容";
+"level.expert" = "掌握全部词表";
+"sheet.importDict" = "导入自定义词典";
+"sheet.importDesc" = "支持 JSON、CSV、TXT 格式的词典文件";
+"sheet.importModeLabel" = "当前导入模式: %@";
+"action.selectFile" = "选择词典文件";
+"label.selectedFile" = "已选择文件:";
+"action.importing" = "正在导入...";
+"action.startImport" = "开始导入";
+"nav.importDict" = "导入词典";
+"importMode.merge" = "添加新词，已有词条会合并释义";
+"importMode.overwrite" = "已有词条会被新数据覆盖";
+"importMode.addOnly" = "只添加不存在的词条，已有词条不变";
+"format.json" = "JSON 格式（推荐）";
+"format.csv" = "CSV 格式";
+"format.txt" = "TXT 格式（简单格式）";
+"section.fieldDesc" = "字段说明";
+"field.required" = "必填";
+"field.optional" = "可选";
+"field.word" = "单词本身";
+"field.phonetic" = "音标（美式）";
+"field.pos" = "词性（n./v./adj.等）";
+"field.definition" = "中文释义，多个用分号分隔";
+"field.example" = "例句";
+"field.frequency" = "词频等级（1-5）";
+"field.level" = "词汇等级（CET4/CET6/GRE）";
+"section.notes" = "注意事项";
+"note.fullDefinition" = "释义字段支持多义展示，使用英文分号分隔";
+"note.csvQuotes" = "CSV格式中，包含逗号的字段需要用双引号包裹";
+"note.txtSeparator" = "TXT格式使用竖线（|）作为字段分隔符";
+"note.ipaPhonetic" = "音标建议使用IPA格式，如 /həˈləʊ/";
+"note.largeFileWait" = "导入大文件时请耐心等待";
+"nav.dictFormatInfo" = "词典格式说明";
+"sheet.exportDict" = "导出自定义词典";
+"sheet.exportDesc" = "将您导入的自定义词条导出为文件，方便备份或分享";
+"label.customEntryCount" = "当前自定义词条数量:";
+"label.exportFormat" = "选择导出格式:";
+"setting.exportFormat" = "导出格式";
+"action.exporting" = "正在导出...";
+"action.exportAndShare" = "导出并分享";
+"nav.exportDict" = "导出词典";
+
+/* === 词典服务 === */
+"pos.definitions" = "释义";
+"pos.noun" = "名词";
+"pos.verb" = "动词";
+"pos.adjective" = "形容词";
+"pos.adverb" = "副词";
+"pos.pronoun" = "代词";
+"pos.preposition" = "介词";
+"pos.conjunction" = "连词";
+"pos.determiner" = "限定词";
+"pos.interjection" = "感叹词";
+"pos.computing" = "计算机";
+"pos.medical" = "医学";
+"pos.internet" = "网络";
+"pos.electronics" = "电子";
+"pos.legal" = "法律";
+"pos.economics" = "经济";
+"pos.chemistry" = "化学";
+"pos.physics" = "物理";
+"pos.mathematics" = "数学";
+"pos.biology" = "生物";
+"pos.pharmacy" = "医药";
+
+/* === 错误信息 === */
+"error.http" = "HTTP错误: %d";
+"error.invalidURL" = "无效的URL地址";
+"error.invalidResponse" = "无效的服务器响应";
+"error.parseError" = "解析错误: %@";
+"error.encoding" = "编码错误";
+"error.network" = "网络错误: %@";
+"error.fetchFailed" = "获取全文失败: %@";
+"error.addFeedFailed" = "添加RSS源失败: %@";
+
+/* === 刷新日志错误 === */
+"httpError.404" = "HTTP 404 · 资源不存在";
+"httpError.504" = "HTTP 504 · 服务器超时";
+"httpError.503" = "HTTP 503 · 服务不可用";
+"httpError.502" = "HTTP 502 · 网关错误";
+"httpError.403" = "HTTP 403 · 访问被拒绝";
+"httpError.401" = "HTTP 401 · 需要认证";
+"httpError.default" = "HTTP %d";
+"error.timeout" = "请求超时";
+"error.connectionFailed" = "无法连接服务器";
+"error.unknown" = "未知错误";
+
+/* === 词汇模型 === */
+"mastery.notStarted" = "待学习";
+"mastery.unlearned" = "未学习";
+"mastery.poor" = "生疏";
+"mastery.learning" = "学习中";
+"mastery.familiar" = "熟悉";
+"mastery.proficient" = "熟练";
+"mastery.mastered" = "精通";
+"mastery.unknown" = "未知";
+
+/* === 文章模型 === */
+"article.noPreview" = "无预览内容";
+"article.unknownDate" = "未知日期";
+
+/* === 词汇统计 === */
+"vocab.countSuffix" = "%d词";
+
+/* === 翻译服务 === */
+"translation.system" = "系统翻译";
+"translation.google" = "Google 翻译";
+"translation.baidu" = "百度翻译";
+"translation.deepl" = "DeepL 翻译";
+
+/* === 导入模式 === */
+"importMode.enhance" = "增强";
+"importMode.overwriteMode" = "覆盖";
+"importMode.addOnlyMode" = "仅新增";
+
+/* === 刷新状态汇总 === */
+"summary.nSuccess.nFail" = "%d个成功 · %d个失败（%@）";
+"summary.allSuccess.nNew" = "%d个全部成功 · 新增%d篇";
+"summary.allSuccess.noNew" = "%d个全部成功 · 无新文章";
+"summary.feedRefreshFailed" = "%@: 刷新失败";
+"summary.feedNewArticles" = "%@: 新增 %d 篇文章";
+"summary.feedNoNew" = "%@: 无新文章";
+
+/* === 默认分类 === */
+"category.all" = "全部";
+"category.allDesc" = "所有生词";
+"category.tech" = "科技";
+"category.techDesc" = "科技相关词汇";
+"category.politics" = "政治";
+"category.politicsDesc" = "政治相关词汇";
+"category.economy" = "经济";
+"category.economyDesc" = "经济金融相关词汇";
+"category.culture" = "文化";
+"category.cultureDesc" = "文化艺术相关词汇";
+"category.daily" = "日常";
+"category.dailyDesc" = "日常生活词汇";
+"category.writing" = "写作";
+"category.writingDesc" = "写作常用词汇";
+
+/* === 主题名称 === */
+"theme.light" = "日间模式";
+"theme.dark" = "夜间模式";
+"theme.sepia" = "护眼黄纸";
+"theme.green" = "护眼绿";
+
+/* === 词汇等级 === */
+"level.beginnerFull" = "初学者 (Oxford 1000)";
+"level.elementaryFull" = "基础 (Oxford 2000)";
+"level.intermediateFull" = "进阶 (Oxford 3000)";
+"level.advancedFull" = "高级 (Oxford 5000)";
+"level.expertFull" = "专家级 (全词表)";
+
+/* === 导入结果 === */
+"import.success" = "成功导入 %d 条";
+"import.skipped" = "跳过 %d 条已存在";
+"import.failed" = "失败 %d 条";
+"import.resultFormat" = "成功: %d, 跳过: %d, 失败: %d";
+
+/* === 默认字体 === */
+"default.font" = "系统字体";
+"custom.font" = "自定义";
+
+/* === FeedViewModel 错误 === */
+"error.networkFailed" = "网络连接失败";
+"error.invalidLink" = "链接无效";
+"error.serverError" = "服务器响应异常";
+"error.contentParseFailed" = "内容解析失败";
+"error.encodingError" = "编码错误";
+
+/* === 颜色名称 === */
+"color.blue" = "蓝色";
+"color.purple" = "紫色";
+"color.orange" = "橙色";
+"color.red" = "红色";
+"color.green" = "绿色";
+"color.pink" = "粉色";
+"color.teal" = "青色";
+"color.indigo" = "靛蓝";
+"color.yellow" = "黄色";
+"color.brown" = "棕色";
+"color.gray" = "灰色";
+
+/* === 阅读器提示 === */
+"hint.systemDictPrompt" = "点击下方「打开原文」可使用系统词典查看详细释义";
+
+/* === 词汇统计 === */
+"vocab.statsSummary" = "共%1$d词，已掌握%2$d，学习中%3$d，待学习%4$d，今日复习%5$d";
+
+/* === 翻译错误 === */
+"error.translationUnavailable" = "系统翻译不可用";
+"error.textTooShort" = "文本太短，无法翻译";
+"error.translationNetwork" = "网络错误，请检查连接";
+"error.translationFailed" = "翻译失败";
+
+/* === 导入详情 === */
+"import.resultDetail" = "导入成功！共处理 %1$d 条，新增 %2$d 条，更新 %3$d 条，跳过 %4$d 条";
+"import.failedDetail" = "导入失败：%@";

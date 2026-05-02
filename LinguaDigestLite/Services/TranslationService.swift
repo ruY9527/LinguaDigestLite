@@ -10,10 +10,19 @@ import UIKit
 
 /// 翻译服务类型
 enum TranslationServiceType: String, CaseIterable {
-    case system = "系统翻译"
-    case google = "Google 翻译"
-    case baidu = "百度翻译"
-    case deepL = "DeepL 翻译"
+    case system
+    case google
+    case baidu
+    case deepL
+
+    var displayName: String {
+        switch self {
+        case .system: return L("translation.system")
+        case .google: return L("translation.google")
+        case .baidu: return L("translation.baidu")
+        case .deepL: return L("translation.deepl")
+        }
+    }
 }
 
 /// 系统翻译服务
@@ -30,13 +39,13 @@ class TranslationService: NSObject {
         var errorDescription: String? {
             switch self {
             case .translationUnavailable:
-                return "系统翻译不可用"
+                return L("error.translationUnavailable")
             case .textTooShort:
-                return "文本太短，无法翻译"
+                return L("error.textTooShort")
             case .networkError:
-                return "网络错误，请检查连接"
+                return L("error.translationNetwork")
             case .unknownError:
-                return "翻译失败"
+                return L("error.translationFailed")
             }
         }
     }

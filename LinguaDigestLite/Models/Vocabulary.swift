@@ -111,7 +111,7 @@ extension Vocabulary {
     /// 获取下一次复习的相对时间描述
     var nextReviewDescription: String {
         guard let nextReview = nextReviewDate else {
-            return "待学习"
+            return L("mastery.notStarted")
         }
 
         let formatter = RelativeDateTimeFormatter()
@@ -122,13 +122,13 @@ extension Vocabulary {
     /// 格式化的掌握程度描述
     var masteredLevelDescription: String {
         switch masteredLevel {
-        case 0: return "未学习"
-        case 1: return "生疏"
-        case 2: return "学习中"
-        case 3: return "熟悉"
-        case 4: return "熟练"
-        case 5: return "精通"
-        default: return "未知"
+        case 0: return L("mastery.unlearned")
+        case 1: return L("mastery.poor")
+        case 2: return L("mastery.learning")
+        case 3: return L("mastery.familiar")
+        case 4: return L("mastery.proficient")
+        case 5: return L("mastery.mastered")
+        default: return L("mastery.unknown")
         }
     }
 }

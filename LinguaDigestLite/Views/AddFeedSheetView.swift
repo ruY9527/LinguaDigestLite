@@ -22,21 +22,21 @@ struct AddFeedSheetView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("RSS源信息") {
-                    TextField("名称（可选）", text: $title)
+                Section(L("feed.info")) {
+                    TextField(L("feed.nameOptional"), text: $title)
                         .textContentType(.name)
 
-                    TextField("RSS链接", text: $url)
+                    TextField(L("feed.url"), text: $url)
                         .textContentType(.URL)
                         .autocapitalization(.none)
                         .keyboardType(.URL)
                         .submitLabel(.done)
                 }
                 
-                Section("备注") {
-                    TextField("添加备注（可选）", text: $notes)
+                Section(L("feed.notes")) {
+                    TextField(L("feed.notesPlaceholder"), text: $notes)
                         .textContentType(.name)
-                    Text("可以为这个订阅源添加备注，方便识别和分类")
+                    Text(L("feed.notesHint"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -45,7 +45,7 @@ struct AddFeedSheetView: View {
                     if isLoading {
                         HStack {
                             Spacer()
-                            ProgressView("正在添加...")
+                            ProgressView(L("status.adding"))
                             Spacer()
                         }
                     } else {
@@ -54,7 +54,7 @@ struct AddFeedSheetView: View {
                         } label: {
                             HStack {
                                 Spacer()
-                                Text("添加")
+                                Text(L("common.add"))
                                     .fontWeight(.semibold)
                                     .foregroundColor(url.isEmpty ? .gray : .blue)
                                 Spacer()
@@ -67,7 +67,7 @@ struct AddFeedSheetView: View {
                         } label: {
                             HStack {
                                 Spacer()
-                                Text("取消")
+                                Text(L("common.cancel"))
                                     .foregroundColor(.secondary)
                                 Spacer()
                             }
@@ -75,7 +75,7 @@ struct AddFeedSheetView: View {
                     }
                 }
 
-                Section("示例RSS源") {
+                Section(L("section.exampleFeeds")) {
                     ForEach(suggestedFeeds, id: \.url) { feed in
                         Button {
                             url = feed.url
@@ -104,12 +104,12 @@ struct AddFeedSheetView: View {
                     }
                 }
             }
-            .navigationTitle("添加订阅源")
+            .navigationTitle(L("nav.addFeed"))
             .navigationBarTitleDisplayMode(.inline)
-            .alert("添加失败", isPresented: $showError) {
-                Button("确定", role: .cancel) { }
+            .alert(L("alert.addFailed"), isPresented: $showError) {
+                Button(L("common.ok"), role: .cancel) { }
             } message: {
-                Text(errorMessage ?? "未知错误")
+                Text(errorMessage ?? L("error.unknown"))
             }
         }
     }
@@ -139,11 +139,11 @@ struct AddFeedSheetView: View {
 
     /// 推荐的RSS源（带备注）
     private let suggestedFeeds = [
-        (title: "BBC News", url: "https://feeds.bbci.co.uk/news/rss.xml", notes: "英国广播公司新闻"),
-        (title: "The Guardian", url: "https://www.theguardian.com/world/rss", notes: "英国卫报世界新闻"),
-        (title: "NPR News", url: "https://feeds.npr.org/1004/rss.xml", notes: "美国国家公共电台"),
-        (title: "TechCrunch", url: "https://techcrunch.com/feed/", notes: "科技创业新闻"),
-        (title: "Wired", url: "https://www.wired.com/feed/rss", notes: "科技文化杂志"),
-        (title: "MIT Technology Review", url: "https://www.technologyreview.com/feed/", notes: "麻省理工科技评论")
+        (title: "BBC News", url: "https://feeds.bbci.co.uk/news/rss.xml", notes: L("feed.note.bbc")),
+        (title: "The Guardian", url: "https://www.theguardian.com/world/rss", notes: L("feed.note.guardian")),
+        (title: "NPR News", url: "https://feeds.npr.org/1004/rss.xml", notes: L("feed.note.npr")),
+        (title: "TechCrunch", url: "https://techcrunch.com/feed/", notes: L("feed.note.tc")),
+        (title: "Wired", url: "https://www.wired.com/feed/rss", notes: L("feed.note.wired")),
+        (title: "MIT Technology Review", url: "https://www.technologyreview.com/feed/", notes: L("feed.note.mit"))
     ]
 }

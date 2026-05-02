@@ -63,28 +63,28 @@ struct MainTabView: View {
             // 文章列表
             ArticleListView(viewModel: articleViewModel, feedViewModel: feedViewModel, selectedTab: $selectedTab)
                 .tabItem {
-                    Label("文章", systemImage: "newspaper.fill")
+                    Label(L("tab.articles"), systemImage: "newspaper.fill")
                 }
                 .tag(0)
 
             // RSS源管理
             FeedListView(viewModel: feedViewModel)
                 .tabItem {
-                    Label("订阅", systemImage: "link.circle.fill")
+                    Label(L("tab.feeds"), systemImage: "link.circle.fill")
                 }
                 .tag(1)
             
             // 生词本
             VocabularyListView(viewModel: vocabularyViewModel)
                 .tabItem {
-                    Label("生词本", systemImage: "book.fill")
+                    Label(L("tab.vocabulary"), systemImage: "book.fill")
                 }
                 .tag(2)
 
             // 设置
             SettingsView()
                 .tabItem {
-                    Label("设置", systemImage: "gearshape.fill")
+                    Label(L("tab.settings"), systemImage: "gearshape.fill")
                 }
                 .tag(3)
         }

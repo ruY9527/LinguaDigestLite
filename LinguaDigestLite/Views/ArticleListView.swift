@@ -35,8 +35,8 @@ struct ArticleListView: View {
                     sourceInfoPopupCard(article: article)
                 }
             }
-            .navigationTitle("文章")
-            .searchable(text: $searchText, prompt: "搜索文章")
+            .navigationTitle(L("nav.articles"))
+            .searchable(text: $searchText, prompt: L("search.articles"))
             .onChange(of: searchText) { newValue in
                 viewModel.searchArticles(query: newValue)
             }
@@ -56,7 +56,7 @@ struct ArticleListView: View {
         HStack(spacing: 12) {
             // 全部按钮
             FilterButton(
-                title: "全部",
+                title: L("filter.all"),
                 isSelected: !viewModel.showingFavoritesOnly && !viewModel.showingUnreadOnly && viewModel.selectedFeedId == nil,
                 count: viewModel.totalCount
             ) {
@@ -65,7 +65,7 @@ struct ArticleListView: View {
 
             // 未读按钮
             FilterButton(
-                title: "未读",
+                title: L("filter.unread"),
                 isSelected: viewModel.showingUnreadOnly,
                 count: viewModel.unreadCount
             ) {
@@ -74,7 +74,7 @@ struct ArticleListView: View {
 
             // 收藏按钮
             FilterButton(
-                title: "收藏",
+                title: L("filter.favorites"),
                 isSelected: viewModel.showingFavoritesOnly,
                 count: viewModel.favoriteCount
             ) {
@@ -103,7 +103,7 @@ struct ArticleListView: View {
     private var articleList: some View {
         Group {
             if viewModel.isLoading {
-                ProgressView("加载中...")
+                ProgressView(L("common.loading"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.articles.isEmpty {
                 contextualEmptyState
@@ -142,7 +142,7 @@ struct ArticleListView: View {
                                 viewModel.toggleFavorite(article)
                             } label: {
                                 Label(
-                                    article.isFavorite ? "取消收藏" : "收藏",
+                                    article.isFavorite ? L("action.unfavorite") : L("action.favorite"),
                                     systemImage: article.isFavorite ? "star.slash" : "star.fill"
                                 )
                             }
@@ -153,13 +153,13 @@ struct ArticleListView: View {
                                 Button(role: .destructive) {
                                     viewModel.deleteFavoriteArticle(article)
                                 } label: {
-                                    Label("删除", systemImage: "trash")
+                                    Label(L("common.delete"), systemImage: "trash")
                                 }
                             } else if !article.isFavorite {
                                 Button(role: .destructive) {
                                     viewModel.deleteArticle(article)
                                 } label: {
-                                    Label("删除", systemImage: "trash")
+                                    Label(L("common.delete"), systemImage: "trash")
                                 }
                             }
                         }
@@ -193,7 +193,7 @@ struct ArticleListView: View {
                         HStack {
                             Image(systemName: "newspaper.fill")
                                 .foregroundColor(.blue)
-                            Text("来源信息")
+                            Text(L("source.info"))
                                 .font(.headline)
                             Spacer()
                             Button {
@@ -211,18 +211,18 @@ struct ArticleListView: View {
                         // 信息内容 - 自适应宽度
                         VStack(alignment: .leading, spacing: 8) {
                             // 来源名称
-                            InfoRow(icon: "globe", label: "来源", value: getSourceName(article))
+                            InfoRow(icon: "globe", label: L("source.label"), value: getSourceName(article))
                             
                             // 作者
                             if let author = article.author, !author.isEmpty {
-                                InfoRow(icon: "person", label: "作者", value: author)
+                                InfoRow(icon: "person", label: L("source.author"), value: author)
                             }
                             
                             // 发布时间
-                            InfoRow(icon: "calendar", label: "发布", value: formatPublishedDate(article.publishedAt))
+                            InfoRow(icon: "calendar", label: L("source.published"), value: formatPublishedDate(article.publishedAt))
                             
                             // 同步时间
-                            InfoRow(icon: "clock.arrow.circlepath", label: "同步", value: getSyncTimeDescription(article))
+                            InfoRow(icon: "clock.arrow.circlepath", label: L("source.synced"), value: getSyncTimeDescription(article))
                             
                             // 链接
                             if let feed = getFeedForArticle(article) {
@@ -231,7 +231,7 @@ struct ArticleListView: View {
                             
                             // 阅读进度
                             if article.readingProgress > 0 {
-                                InfoRow(icon: "book.open", label: "进度", value: "\(Int(article.readingProgress * 100))%")
+                                InfoRow(icon: "book.open", label: L("source.progress"), value: String(format: L("source.progressValue"), Int(article.readingProgress * 100)))
                             }
                         }
                         
@@ -245,7 +245,7 @@ struct ArticleListView: View {
                                 }
                                 showingSourceInfoArticle = nil
                             } label: {
-                                Label("打开原文", systemImage: "safari")
+                                Label(L("action.openOriginal"), systemImage: "safari")
                                     .font(.caption)
                                     .foregroundColor(.blue)
                             }
@@ -254,7 +254,7 @@ struct ArticleListView: View {
                                 UIPasteboard.general.string = article.link
                                 showingSourceInfoArticle = nil
                             } label: {
-                                Label("复制链接", systemImage: "doc.on.doc")
+                                Label(L("action.copyLink"), systemImage: "doc.on.doc")
                                     .font(.caption)
                                     .foregroundColor(.blue)
                             }
@@ -305,9 +305,9 @@ struct ArticleListView: View {
         if let feed = getFeedForArticle(article) {
             return feed.title
         }
-        return "未知来源"
+        return L("source.unknown")
     }
-    
+
     /// 获取文章对应的Feed
     private func getFeedForArticle(_ article: Article) -> Feed? {
         if let feedId = article.feedId {
@@ -323,13 +323,13 @@ struct ArticleListView: View {
         return formatter.localizedString(for: article.fetchedAt, relativeTo: Date())
     }
     
-    /// 格式化发布日期
+    /// 格式化发布日期（为空时回退到当前时间）
     private func formatPublishedDate(_ date: Date?) -> String {
-        guard let date = date else { return "未知" }
+        let effectiveDate = date ?? Date()
         let formatter = DateFormatter()
         formatter.dateFormat = "MM/dd HH:mm"
         formatter.locale = Locale(identifier: "zh_Hans_CN")
-        return formatter.string(from: date)
+        return formatter.string(from: effectiveDate)
     }
     
     /// 提取URL主机名
@@ -347,17 +347,17 @@ struct ArticleListView: View {
             // 收藏为空：引导用户去浏览文章并收藏
             emptyState(
                 icon: "star",
-                title: "暂无收藏文章",
-                subtitle: "浏览文章时点击星标即可收藏",
-                buttonTitle: "浏览全部文章",
+                title: L("empty.noFavorites"),
+                subtitle: L("empty.noFavoritesHint"),
+                buttonTitle: L("action.browseAll"),
                 buttonAction: { viewModel.showAll() }
             )
         } else if viewModel.showingUnreadOnly {
             // 未读为空：所有文章都已读
             emptyState(
                 icon: "checkmark.circle",
-                title: "没有未读文章",
-                subtitle: "所有文章都已阅读完毕",
+                title: L("empty.noUnread"),
+                subtitle: L("empty.noUnreadHint"),
                 buttonTitle: nil,
                 buttonAction: nil
             )
@@ -365,9 +365,9 @@ struct ArticleListView: View {
             // 全部为空：引导用户去订阅页添加源
             emptyState(
                 icon: "newspaper",
-                title: "暂无文章",
-                subtitle: "请前往订阅页添加RSS订阅源",
-                buttonTitle: "前往添加订阅源",
+                title: L("empty.noArticles"),
+                subtitle: L("empty.noArticlesHint"),
+                buttonTitle: L("action.goToAddFeed"),
                 buttonAction: { selectedTab = 1 }
             )
         }
@@ -460,7 +460,7 @@ struct ArticleRowView: View {
     
     /// 来源名称
     private var sourceName: String {
-        sourceFeed?.title ?? "未知来源"
+        sourceFeed?.title ?? L("source.unknown")
     }
 
     var body: some View {
@@ -499,7 +499,7 @@ struct ArticleRowView: View {
 
                 // 摘要
                 if let summary = article.summary, !summary.isEmpty {
-                    Text(summary.prefix(150))
+                    Text(FeedService.cleanHTMLContent(summary).prefix(150))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .lineLimit(2)

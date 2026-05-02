@@ -11,12 +11,25 @@ import UniformTypeIdentifiers
 
 /// 词典导入模式
 enum DictionaryImportMode: String, CaseIterable {
-    /// 增强：添加新词，不覆盖已有词条
-    case enhance = "增强"
-    /// 覆盖：替换已有词条
-    case overwrite = "覆盖"
-    /// 仅新增：只添加不存在的词条
-    case addOnly = "仅新增"
+    case enhance
+    case overwrite
+    case addOnly
+
+    var displayName: String {
+        switch self {
+        case .enhance: return L("importMode.enhance")
+        case .overwrite: return L("importMode.overwriteMode")
+        case .addOnly: return L("importMode.addOnlyMode")
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .enhance: return L("importMode.merge")
+        case .overwrite: return L("importMode.overwrite")
+        case .addOnly: return L("importMode.addOnly")
+        }
+    }
 }
 
 /// 词典导入结果
@@ -31,9 +44,9 @@ struct DictionaryImportResult {
     
     var summary: String {
         if success {
-            return "导入成功！共处理 \(totalEntries) 条，新增 \(importedEntries) 条，更新 \(updatedEntries) 条，跳过 \(skippedEntries) 条"
+            return String(format: L("import.resultDetail"), totalEntries, importedEntries, updatedEntries, skippedEntries)
         } else {
-            return "导入失败：\(errors.first ?? "未知错误")"
+            return String(format: L("import.failedDetail"), errors.first ?? L("common.unknown"))
         }
     }
 }

@@ -58,19 +58,17 @@ extension Article {
     /// 获取预览文本
     var previewText: String {
         if let summary = summary, !summary.isEmpty {
-            return String(summary.prefix(200))
+            return String(FeedService.cleanHTMLContent(summary).prefix(200))
         }
         if let content = content, !content.isEmpty {
-            return String(content.prefix(200))
+            return String(FeedService.cleanHTMLContent(content).prefix(200))
         }
-        return "无预览内容"
+        return L("article.noPreview")
     }
     
-    /// 格式化的发布日期
+    /// 格式化的发布日期（publishedAt 为空时回退到 fetchedAt）
     var formattedDate: String {
-        guard let date = publishedAt else {
-            return "未知日期"
-        }
+        let date = publishedAt ?? fetchedAt
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: date, relativeTo: Date())

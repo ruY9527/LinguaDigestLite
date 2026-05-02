@@ -191,7 +191,7 @@ class ReaderViewModel: ObservableObject {
             selectedWordDefinition = definitions.joined(separator: "；")
         } else if dictionaryService.hasSystemDefinition(for: word) {
             selectedWordDefinitions = []
-            selectedWordDefinition = "点击下方「打开原文」可使用系统词典查看详细释义"
+            selectedWordDefinition = L("hint.systemDictPrompt")
         } else {
             selectedWordDefinitions = []
             selectedWordDefinition = nil
@@ -345,30 +345,24 @@ class ReaderViewModel: ObservableObject {
                 return feed.title
             }
         }
-        return "未知来源"
+        return L("source.unknown")
     }
 
-    /// 发布日期描述
+    /// 发布日期描述（publishedAt 为空时回退到 fetchedAt）
     var publishedDateDescription: String {
-        guard let publishedAt = article.publishedAt else {
-            return "未知日期"
-        }
-
+        let date = article.publishedAt ?? article.fetchedAt
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: publishedAt, relativeTo: Date())
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 
-    /// 发布日期格式化显示
+    /// 发布日期格式化显示（publishedAt 为空时回退到 fetchedAt）
     var publishedDate: String {
-        guard let publishedAt = article.publishedAt else {
-            return "未知"
-        }
-
+        let date = article.publishedAt ?? article.fetchedAt
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy年MM月dd日"
-        formatter.locale = Locale(identifier: "zh_Hans_CN")
-        return formatter.string(from: publishedAt)
+        formatter.locale = Locale.current
+        formatter.setLocalizedDateFormatFromTemplate("yMMMMd")
+        return formatter.string(from: date)
     }
 
     var displaySummary: String? {

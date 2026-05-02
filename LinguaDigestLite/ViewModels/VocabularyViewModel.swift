@@ -14,7 +14,16 @@ enum VocabularyFilterType: String, CaseIterable {
     case mastered = "已掌握"
     case learning = "学习中"
     case reviewToday = "待复习"
-    
+
+    var displayName: String {
+        switch self {
+        case .all: return L("stat.total")
+        case .mastered: return L("stat.mastered")
+        case .learning: return L("stat.learning")
+        case .reviewToday: return L("stat.reviewDue")
+        }
+    }
+
     var color: String {
         switch self {
         case .all: return "#007AFF"      // 蓝色
@@ -76,6 +85,12 @@ class VocabularyViewModel: ObservableObject {
         vocabulary = databaseManager.fetchVocabulary(for: categoryId)
         backfillVocabularyDefinitionsIfNeeded()
         todayReviewWords = databaseManager.fetchTodayReviewVocabulary(for: categoryId)
+    }
+
+    /// 下拉刷新：重新加载分类和生词数据
+    func reloadData() {
+        loadCategories()
+        loadVocabulary()
     }
     
     /// 根据筛选类型获取单词列表
@@ -352,6 +367,6 @@ struct VocabularyStatistics {
     var reviewToday: Int
 
     var description: String {
-        "共\(total)词，已掌握\(mastered)，学习中\(learning)，待学习\(new)，今日复习\(reviewToday)"
+        String(format: L("vocab.statsSummary"), total, mastered, learning, new, reviewToday)
     }
 }

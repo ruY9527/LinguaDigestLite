@@ -43,7 +43,7 @@ struct ReaderView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("关闭") {
+                    Button(L("common.close")) {
                         viewModel.markAsRead()
                         dismiss()
                     }
@@ -74,19 +74,19 @@ struct ReaderView: View {
                         Button {
                             shareArticle()
                         } label: {
-                            Label("分享", systemImage: "square.and.arrow.up")
+                            Label(L("action.share"), systemImage: "square.and.arrow.up")
                         }
 
                         Button {
                             openInBrowser()
                         } label: {
-                            Label("在浏览器中打开", systemImage: "safari")
+                            Label(L("action.openInBrowser"), systemImage: "safari")
                         }
 
                         Button {
                             copyLink()
                         } label: {
-                            Label("复制链接", systemImage: "link")
+                            Label(L("action.copyLink"), systemImage: "link")
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
@@ -106,13 +106,13 @@ struct ReaderView: View {
             .sheet(isPresented: $viewModel.showingSentenceTranslation) {
                 SentenceTranslationSheet(viewModel: viewModel)
             }
-            .alert("选择翻译服务", isPresented: $viewModel.showingTranslationMenu) {
+            .alert(L("action.selectTranslation"), isPresented: $viewModel.showingTranslationMenu) {
                 ForEach(viewModel.availableTranslationServices, id: \.self) { serviceType in
-                    Button(serviceType.rawValue) {
+                    Button(serviceType.displayName) {
                         viewModel.translateWithService(type: serviceType)
                     }
                 }
-                Button("取消", role: .cancel) {}
+                Button(L("common.cancel"), role: .cancel) {}
             }
         }
     }
@@ -122,7 +122,7 @@ struct ReaderView: View {
         Group {
             if viewModel.isLoadingContent {
                 VStack(spacing: 16) {
-                    ProgressView("加载全文...")
+                    ProgressView(L("status.loadingContent"))
 
                     if let summary = article.summary, !summary.isEmpty {
                         Text(FeedService.cleanHTMLContent(summary))
@@ -154,10 +154,10 @@ struct ReaderView: View {
                             Image(systemName: "doc.text")
                                 .font(.system(size: 50))
                                 .foregroundColor(.gray)
-                            Text("无法加载文章内容")
+                            Text(L("error.loadFailed"))
                                 .font(.headline)
                                 .foregroundColor(.secondary)
-                            Button("在浏览器中打开") {
+                            Button(L("action.openInBrowser")) {
                                 openInBrowser()
                             }
                             .buttonStyle(.borderedProminent)
@@ -189,14 +189,14 @@ struct ReaderView: View {
             articleTitleView
 
             HStack(spacing: 10) {
-                ReaderMetaPill(icon: "clock", text: "约\(viewModel.estimatedReadingMinutes)分钟")
-                ReaderMetaPill(icon: "text.justify", text: "\(viewModel.content.split(whereSeparator: \.isWhitespace).count)词")
+                ReaderMetaPill(icon: "clock", text: String(format: L("meta.readTime"), viewModel.estimatedReadingMinutes))
+                ReaderMetaPill(icon: "text.justify", text: String(format: L("vocab.countSuffix"), viewModel.content.split(whereSeparator: \.isWhitespace).count))
                 if let author = viewModel.article.author, !author.isEmpty {
                     ReaderMetaPill(icon: "person", text: author)
                 }
             }
 
-            Text("双击正文中的单词即可查词并加入生词本。")
+            Text(L("help.doubleTap"))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -221,7 +221,7 @@ struct ReaderView: View {
 
     private func summaryCard(_ summary: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("摘要")
+            Text(L("card.summary"))
                 .font(.caption.weight(.semibold))
                 .foregroundColor(.secondary)
             Text(summary)
@@ -320,7 +320,7 @@ struct ReaderView: View {
                 }
 
                 VStack {
-                    Text("正在朗读...")
+                    Text(L("status.speaking"))
                         .font(.caption)
 
                     ProgressView(value: viewModel.currentReadingProgress ?? 0.0)
@@ -441,7 +441,7 @@ struct ReaderView: View {
                         .foregroundColor(Color(hex: DictionaryService.colorForPartOfSpeech(analysis.partOfSpeech)))
 
                     if let lemma = analysis.lemma, lemma.lowercased() != word.lowercased() {
-                        Label("原形: \(lemma)", systemImage: "arrow.turn.down.left")
+                        Label(String(format: L("lemma.label"), lemma), systemImage: "arrow.turn.down.left")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -452,9 +452,12 @@ struct ReaderView: View {
 
             // 按词性分组显示释义
             if !viewModel.selectedWordGroupedDefinitions.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(Array(viewModel.selectedWordGroupedDefinitions.enumerated()), id: \.offset) { _, group in
-                        VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(Array(viewModel.selectedWordGroupedDefinitions.enumerated()), id: \.offset) { groupIndex, group in
+                        VStack(alignment: .leading, spacing: 6) {
+                            if groupIndex > 0 {
+                                Divider()
+                            }
                             // 词性标签
                             Text(DictionaryService.displayNameForPartOfSpeech(group.pos))
                                 .font(.caption.weight(.semibold))
@@ -466,51 +469,79 @@ struct ReaderView: View {
 
                             // 该词性下的所有释义
                             ForEach(Array(group.definitions.enumerated()), id: \.offset) { index, definition in
-                                (Text("\(index + 1). ").font(.caption.weight(.semibold)).foregroundColor(.blue)
-                                 + Text(definition).font(.subheadline).foregroundColor(.primary))
-                                    .fixedSize(horizontal: false, vertical: true)
+                                HStack(alignment: .top, spacing: 6) {
+                                    Text("\(index + 1).")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundColor(.blue)
+                                        .frame(minWidth: 20, alignment: .trailing)
+                                    Text(definition)
+                                        .font(.subheadline)
+                                        .foregroundColor(.primary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
                             }
                         }
                     }
                 }
+                .frame(maxWidth: .infinity)
             } else if !viewModel.selectedWordDefinitions.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("释义")
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(L("section.definitions"))
                         .font(.caption)
                         .foregroundColor(.secondary)
 
                     ForEach(Array(viewModel.selectedWordDefinitions.enumerated()), id: \.offset) { index, definition in
-                        (Text("\(index + 1). ").font(.caption.weight(.semibold)).foregroundColor(.blue)
-                         + Text(definition).font(.subheadline).foregroundColor(.primary))
-                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(alignment: .top, spacing: 6) {
+                            Text("\(index + 1).")
+                                .font(.caption.weight(.semibold))
+                                .foregroundColor(.blue)
+                                .frame(minWidth: 20, alignment: .trailing)
+                            Text(definition)
+                                .font(.subheadline)
+                                .foregroundColor(.primary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity)
             } else if let definition = viewModel.selectedWordDefinition {
-                let items = definition.components(separatedBy: CharacterSet(charactersIn: "；;|"))
-                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                    .filter { !$0.isEmpty }
+                let items = DictionaryService.shared.splitDefinitions(definition)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("释义")
+                    Text(L("section.definitions"))
                         .font(.caption)
                         .foregroundColor(.secondary)
 
                     if items.count > 1 {
-                        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                            (Text("\(index + 1). ").font(.caption.weight(.semibold)).foregroundColor(.blue)
-                             + Text(item).font(.subheadline).foregroundColor(.primary))
-                                .fixedSize(horizontal: false, vertical: true)
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                                HStack(alignment: .top, spacing: 6) {
+                                    Text("\(index + 1).")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundColor(.blue)
+                                        .frame(minWidth: 20, alignment: .trailing)
+                                    Text(item)
+                                        .font(.subheadline)
+                                        .foregroundColor(.primary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
                         }
                     } else {
                         Text(definition)
                             .font(.subheadline)
                             .foregroundColor(.primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
+                .frame(maxWidth: .infinity)
             }
 
             if let context = viewModel.selectedWordContext {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("原文上下文")
+                    Text(L("section.context"))
                         .font(.caption)
                         .foregroundColor(.secondary)
 
@@ -529,7 +560,7 @@ struct ReaderView: View {
                     Image(systemName: "book.fill")
                         .font(.caption)
                         .foregroundColor(.blue)
-                    Text("iOS系统词典有详细释义")
+                    Text(L("hint.systemDict"))
                         .font(.caption)
                         .foregroundColor(.blue)
                 }
@@ -542,13 +573,14 @@ struct ReaderView: View {
         VStack(alignment: .leading, spacing: 10) {
             // 英文释义
             if let englishDef = viewModel.selectedWordEnglishDefinition, !englishDef.isEmpty {
+                let normalizedDef = englishDef.replacingOccurrences(of: "\\n", with: "\n")
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("English Definition")
+                    Text(L("section.chineseDef"))
                         .font(.caption)
                         .foregroundColor(.secondary)
 
                     ScrollView(.vertical, showsIndicators: true) {
-                        Text(englishDef)
+                        Text(normalizedDef)
                             .font(.subheadline)
                             .foregroundColor(.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -557,7 +589,7 @@ struct ReaderView: View {
                 }
             }
 
-            Text("添加到分类")
+            Text(L("section.addToCategory"))
                 .font(.caption)
                 .foregroundColor(.secondary)
 
@@ -602,7 +634,7 @@ struct ReaderView: View {
             } label: {
                 HStack {
                     Image(systemName: "plus.circle.fill")
-                    Text("加入生词本")
+                    Text(L("action.addToVocab"))
                 }
                 .font(.headline)
                 .foregroundColor(.white)
@@ -828,7 +860,7 @@ struct ArticleReaderTextView: UIViewRepresentable {
             self.textView = textView
             
             // 创建自定义菜单项
-            let translateMenuItem = UIMenuItem(title: "翻译句子", action: #selector(Coordinator.translateSelectedText))
+            let translateMenuItem = UIMenuItem(title: L("action.translateSentence"), action: #selector(Coordinator.translateSelectedText))
             UIMenuController.shared.menuItems = [translateMenuItem]
             UIMenuController.shared.update()
         }
@@ -994,7 +1026,7 @@ private struct SystemDictionarySheetView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("关闭") {
+                    Button(L("common.close")) {
                         dismiss()
                     }
                 }
@@ -1045,7 +1077,7 @@ private struct SystemDictionarySheetView: View {
                     }
 
                     if let category = viewModel.selectedCategoryForWord {
-                        Text("加入分类: \(category.name)")
+                        Text(String(format: L("category.addLabel"), category.name))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -1056,7 +1088,7 @@ private struct SystemDictionarySheetView: View {
 
             if !viewModel.selectedWordGroupedDefinitions.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("快速释义")
+                    Text(L("section.quickDef"))
                         .font(.caption)
                         .foregroundColor(.secondary)
 
@@ -1078,6 +1110,7 @@ private struct SystemDictionarySheetView: View {
                                     Text(definition)
                                         .font(.caption)
                                         .foregroundColor(.primary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                             }
                         }
@@ -1085,7 +1118,7 @@ private struct SystemDictionarySheetView: View {
                 }
             } else if !viewModel.selectedWordDefinitions.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("快速释义")
+                    Text(L("section.quickDef"))
                         .font(.caption)
                         .foregroundColor(.secondary)
 
@@ -1097,19 +1130,20 @@ private struct SystemDictionarySheetView: View {
                             Text(definition)
                                 .font(.subheadline)
                                 .foregroundColor(.primary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
             } else {
-                Text("下方已切换到系统完整英汉词典。")
+                Text(L("hint.systemDictSwitched"))
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
 
             if let context = viewModel.selectedWordContext {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("原文上下文")
+                    Text(L("section.context"))
                         .font(.caption)
                         .foregroundColor(.secondary)
 
@@ -1191,7 +1225,7 @@ private struct SentenceTranslationSheet: View {
             VStack(spacing: 20) {
                 // 原文显示
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("原文")
+                    Text(L("sheet.originalText"))
                         .font(.headline)
                         .foregroundColor(.secondary)
 
@@ -1212,7 +1246,7 @@ private struct SentenceTranslationSheet: View {
 
                 // 翻译服务选择
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("选择翻译服务")
+                    Text(L("sheet.translationServices"))
                         .font(.headline)
                         .foregroundColor(.secondary)
 
@@ -1247,16 +1281,16 @@ private struct SentenceTranslationSheet: View {
                 }
 
                 // 提示信息
-                Text("点击翻译服务将跳转到对应应用进行翻译")
+                Text(L("hint.translationRedirect"))
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .padding(.bottom)
             }
-            .navigationTitle("句子翻译")
+            .navigationTitle(L("nav.sentenceTranslation"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("关闭") {
+                    Button(L("common.close")) {
                         dismiss()
                         viewModel.closeSentenceTranslation()
                     }

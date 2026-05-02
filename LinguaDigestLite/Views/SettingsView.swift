@@ -47,7 +47,7 @@ struct SettingsView: View {
                 // 关于
                 aboutSection
             }
-            .navigationTitle("设置")
+            .navigationTitle(L("nav.settings"))
             .sheet(isPresented: $showingDictionaryImport) {
                 DictionaryImportSheet(
                     importMode: selectedImportMode,
@@ -63,28 +63,28 @@ struct SettingsView: View {
             .sheet(isPresented: $showingExportSheet) {
                 DictionaryExportSheet()
             }
-            .alert("导入结果", isPresented: $showingImportResult) {
-                Button("确定", role: .cancel) {}
+            .alert(L("alert.importResult"), isPresented: $showingImportResult) {
+                Button(L("common.ok"), role: .cancel) {}
             } message: {
-                Text(importResult?.summary ?? "导入完成")
+                Text(importResult?.summary ?? L("alert.importComplete"))
             }
-            .alert("确认清除", isPresented: $showingClearConfirmation) {
-                Button("取消", role: .cancel) {}
-                Button("清除", role: .destructive) {
+            .alert(L("alert.confirmClear"), isPresented: $showingClearConfirmation) {
+                Button(L("common.cancel"), role: .cancel) {}
+                Button(L("common.clear"), role: .destructive) {
                     DictionaryService.shared.clearCustomEntries()
                 }
             } message: {
-                Text("确定要清除所有自定义词条吗？此操作不可撤销。")
+                Text(L("alert.clearCustomDictMsg"))
             }
         }
     }
     
     /// 阅读设置部分
     private var readingSettingsSection: some View {
-        Section("阅读设置") {
+        Section(L("section.reading")) {
             // 字体大小
             VStack(alignment: .leading, spacing: 8) {
-                Text("字体大小")
+                Text(L("setting.fontSize"))
                 
                 HStack {
                     Text("A")
@@ -103,7 +103,7 @@ struct SettingsView: View {
             
             // 行间距
             VStack(alignment: .leading, spacing: 8) {
-                Text("行间距")
+                Text(L("setting.lineSpacing"))
                 
                 HStack {
                     ForEach([1.0, 1.25, 1.5, 1.75, 2.0], id: \.self) { spacing in
@@ -126,17 +126,17 @@ struct SettingsView: View {
             }
             
             // 段落间距
-            Stepper("段落间距: \(Int(userSettings.readingSettings.paragraphSpacing))", value: $userSettings.readingSettings.paragraphSpacing, in: 8...24)
+            Stepper(String(format: L("setting.paragraphSpacing"), Int(userSettings.readingSettings.paragraphSpacing)), value: $userSettings.readingSettings.paragraphSpacing, in: 8...24)
             
             // 边距
-            Stepper("页面边距: \(Int(userSettings.readingSettings.marginSize))", value: $userSettings.readingSettings.marginSize, in: 8...32)
+            Stepper(String(format: L("setting.pageMargin"), Int(userSettings.readingSettings.marginSize)), value: $userSettings.readingSettings.marginSize, in: 8...32)
             
             // 字体选择
             NavigationLink {
                 FontPickerView(selectedFont: $userSettings.readingSettings.fontName)
             } label: {
                 HStack {
-                    Text("字体")
+                    Text(L("setting.font"))
                     Spacer()
                     Text(fontDisplayName)
                         .foregroundColor(.secondary)
@@ -148,7 +148,7 @@ struct SettingsView: View {
                 ThemePickerView(selectedTheme: $userSettings.readingSettings.theme)
             } label: {
                 HStack {
-                    Text("阅读主题")
+                    Text(L("setting.readingTheme"))
                     Spacer()
                     
                     Circle()
@@ -165,20 +165,20 @@ struct SettingsView: View {
     
     /// 语音设置部分
     private var speechSettingsSection: some View {
-        Section("语音朗读") {
+        Section(L("section.tts")) {
             NavigationLink {
                 VoicePickerView()
             } label: {
                 HStack {
-                    Text("语音")
+                    Text(L("setting.voice"))
                     Spacer()
-                    Text("美式英语")
+                    Text(L("setting.americanEnglish"))
                         .foregroundColor(.secondary)
                 }
             }
             
             VStack(alignment: .leading, spacing: 8) {
-                Text("朗读速度")
+                Text(L("setting.speechRate"))
                 
                 HStack {
                     Image(systemName: "tortoise")
@@ -199,19 +199,19 @@ struct SettingsView: View {
     
     /// 学习设置部分
     private var learningSettingsSection: some View {
-        Section("学习设置") {
+        Section(L("section.learning")) {
             // 自动高亮生词
-            Toggle("自动高亮生词", isOn: $userSettings.readingSettings.autoHighlightNewWords)
+            Toggle(L("setting.autoHighlight"), isOn: $userSettings.readingSettings.autoHighlightNewWords)
             
             // 显示音标
-            Toggle("显示音标", isOn: $userSettings.readingSettings.showPhonetic)
+            Toggle(L("setting.showPhonetic"), isOn: $userSettings.readingSettings.showPhonetic)
             
             // 词汇等级
             NavigationLink {
                 VocabularyLevelPickerView(selectedLevel: $userSettings.readingSettings.vocabularyLevel)
             } label: {
                 HStack {
-                    Text("词汇等级")
+                    Text(L("setting.vocabLevel"))
                     Spacer()
                     Text(userSettings.readingSettings.vocabularyLevel.displayName)
                         .foregroundColor(.secondary)
@@ -219,7 +219,7 @@ struct SettingsView: View {
             }
             
             // 每日复习提醒
-            Toggle("每日复习提醒", isOn: Binding(
+            Toggle(L("setting.dailyReminder"), isOn: Binding(
                 get: { userSettings.reminderSettings.dailyReviewEnabled },
                 set: { newValue in
                     if newValue {
@@ -249,7 +249,7 @@ struct SettingsView: View {
             if userSettings.reminderSettings.dailyReviewEnabled {
                 // 提醒时间选择
                 DatePicker(
-                    "提醒时间",
+                    L("setting.reminderTime"),
                     selection: Binding(
                         get: {
                             let calendar = Calendar.current
@@ -279,10 +279,10 @@ struct SettingsView: View {
                 
                 // 显示今日待复习数量
                 HStack {
-                    Text("今日待复习")
+                    Text(L("setting.todayReview"))
                     Spacer()
                     let reviewCount = DatabaseManager.shared.fetchTodayReviewVocabulary(for: nil).count
-                    Text("\(reviewCount) 词")
+                    Text(String(format: L("setting.reviewCountSuffix"), reviewCount))
                         .foregroundColor(reviewCount > 0 ? .orange : .secondary)
                 }
                 
@@ -296,7 +296,7 @@ struct SettingsView: View {
                 } label: {
                     HStack {
                         Image(systemName: "bell.fill")
-                        Text("发送测试提醒")
+                        Text(L("action.sendTestReminder"))
                     }
                     .foregroundColor(.blue)
                 }
@@ -306,16 +306,16 @@ struct SettingsView: View {
     
     /// ECDICT 完整词典部分
     private var ecdictDictionarySection: some View {
-        Section("ECDICT 完整词典") {
+        Section(L("section.ecdict")) {
             // 状态显示
             HStack {
-                Text("词典状态")
+                Text(L("setting.dictStatus"))
                 Spacer()
                 if DictionaryDatabaseManager.shared.isECDICTAvailable {
-                    Text("已就绪")
+                    Text(L("status.ready"))
                         .foregroundColor(.green)
                 } else {
-                    Text("未找到")
+                    Text(L("status.notFound"))
                         .foregroundColor(.orange)
                 }
             }
@@ -323,15 +323,15 @@ struct SettingsView: View {
             // 词条数量
             if DictionaryDatabaseManager.shared.isECDICTAvailable {
                 HStack {
-                    Text("词条数量")
+                    Text(L("setting.entryCount"))
                     Spacer()
-                    Text("\(DictionaryDatabaseManager.shared.ecdictEntryCount.formatted()) 条")
+                    Text(String(format: L("setting.entryCountSuffix"), DictionaryDatabaseManager.shared.ecdictEntryCount))
                         .foregroundColor(.secondary)
                 }
             }
 
             // 说明
-            Text("ECDICT 是开源英汉词典，包含 77 万+词条，支持音标、词性、中文释义。词典已内置在应用中，离线可用。")
+            Text(L("setting.ecdictDesc"))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -339,19 +339,19 @@ struct SettingsView: View {
 
     /// 词典导入部分
     private var dictionaryImportSection: some View {
-        Section("词典管理") {
+        Section(L("section.dictManagement")) {
             // 当前自定义词条数量
             HStack {
-                Text("自定义词条")
+                Text(L("setting.customEntries"))
                 Spacer()
-                Text("\(DictionaryService.shared.getCustomEntryCount()) 条")
+                Text(String(format: L("setting.entryCountSuffix"), DictionaryService.shared.getCustomEntryCount()))
                     .foregroundColor(.secondary)
             }
-            
+
             // 导入模式选择
-            Picker("导入模式", selection: $selectedImportMode) {
+            Picker(L("setting.importMode"), selection: $selectedImportMode) {
                 ForEach(DictionaryImportMode.allCases, id: \.self) { mode in
-                    Text(mode.rawValue).tag(mode)
+                    Text(mode.displayName).tag(mode)
                 }
             }
             
@@ -361,7 +361,7 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "square.and.arrow.down")
-                    Text("导入词典")
+                    Text(L("action.importDict"))
                 }
             }
             
@@ -371,7 +371,7 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "square.and.arrow.up")
-                    Text("导出自定义词典")
+                    Text(L("action.exportCustomDict"))
                 }
             }
             .disabled(DictionaryService.shared.getCustomEntryCount() == 0)
@@ -382,7 +382,7 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "questionmark.circle")
-                    Text("词典格式说明")
+                    Text(L("action.dictFormatInfo"))
                 }
             }
             
@@ -392,7 +392,7 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "trash")
-                    Text("清除自定义词条")
+                    Text(L("action.clearCustomEntries"))
                 }
                 .foregroundColor(.red)
             }
@@ -400,7 +400,7 @@ struct SettingsView: View {
             
             // 下载示例文件
             VStack(alignment: .leading, spacing: 12) {
-                Text("下载示例词典文件")
+                Text(L("section.downloadSample"))
                     .font(.headline)
                 
                 HStack(spacing: 16) {
@@ -444,16 +444,16 @@ struct SettingsView: View {
 
     /// 关于部分
     private var aboutSection: some View {
-        Section("关于") {
+        Section(L("section.about")) {
             HStack {
-                Text("版本")
+                Text(L("setting.version"))
                 Spacer()
                 Text("1.0.0")
                     .foregroundColor(.secondary)
             }
             
             HStack {
-                Text("应用名称")
+                Text(L("setting.appName"))
                 Spacer()
                 Text("LinguaDigestLite")
                     .foregroundColor(.secondary)
@@ -471,7 +471,7 @@ struct SettingsView: View {
             Button {
                 userSettings.resetToDefaults()
             } label: {
-                Text("重置所有设置")
+                Text(L("action.resetAll"))
                     .foregroundColor(.red)
             }
         }
@@ -480,22 +480,22 @@ struct SettingsView: View {
     /// 字体显示名称
     private var fontDisplayName: String {
         if let fontName = userSettings.readingSettings.fontName {
-            return ReadingSettings.standardFonts.first { $0.value == fontName }?.key ?? "自定义"
+            return ReadingSettings.standardFonts.first { $0.value == fontName }?.key ?? L("custom.font")
         }
-        return "系统字体"
+        return L("default.font")
     }
 
     /// 朗读速度描述
     private var speechRateDescription: String {
         let rate = userSettings.readingSettings.speechRate
         if rate < 0.4 {
-            return "慢速"
+            return L("speed.slow")
         } else if rate < 0.55 {
-            return "适中"
+            return L("speed.medium")
         } else if rate < 0.7 {
-            return "快速"
+            return L("speed.fast")
         } else {
-            return "极快"
+            return L("speed.veryFast")
         }
     }
 }
@@ -530,7 +530,7 @@ struct FontPickerView: View {
                 .buttonStyle(.plain)
             }
         }
-        .navigationTitle("选择字体")
+        .navigationTitle(L("nav.selectFont"))
     }
 }
 
@@ -572,7 +572,7 @@ struct ThemePickerView: View {
                 .buttonStyle(.plain)
             }
         }
-        .navigationTitle("选择主题")
+        .navigationTitle(L("nav.selectTheme"))
     }
 }
 
@@ -611,7 +611,7 @@ struct VoicePickerView: View {
                 .buttonStyle(.plain)
             }
         }
-        .navigationTitle("选择语音")
+        .navigationTitle(L("nav.selectVoice"))
     }
 }
 
@@ -645,22 +645,22 @@ struct VocabularyLevelPickerView: View {
                 .buttonStyle(.plain)
             }
         }
-        .navigationTitle("词汇等级")
+        .navigationTitle(L("setting.vocabLevel"))
     }
     
     /// 等级描述
     private func levelDescription(_ level: VocabularyLevel) -> String {
         switch level {
         case .beginner:
-            return "基础词汇，适合初学者"
+            return L("level.beginner")
         case .elementary:
-            return "初级词汇，适合有一定基础的学习者"
+            return L("level.elementary")
         case .intermediate:
-            return "中级词汇，适合中级学习者"
+            return L("level.intermediate")
         case .advanced:
-            return "高级词汇，适合高级学习者"
+            return L("level.advanced")
         case .expert:
-            return "全词表，适合专业学习者"
+            return L("level.expert")
         }
     }
 }
@@ -686,10 +686,10 @@ struct DictionaryImportSheet: View {
                         .font(.system(size: 48))
                         .foregroundColor(.blue)
                     
-                    Text("导入自定义词典")
+                    Text(L("sheet.importDict"))
                         .font(.headline)
-                    
-                    Text("支持 JSON、CSV、TXT 格式的词典文件")
+
+                    Text(L("sheet.importDesc"))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
@@ -698,7 +698,7 @@ struct DictionaryImportSheet: View {
                 
                 // 导入模式说明
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("当前导入模式: \(importMode.rawValue)")
+                    Text(String(format: L("sheet.importModeLabel"), importMode.rawValue))
                         .font(.headline)
                     
                     Text(importModeDescription(importMode))
@@ -717,7 +717,7 @@ struct DictionaryImportSheet: View {
                 } label: {
                     HStack {
                         Image(systemName: "folder")
-                        Text("选择词典文件")
+                        Text(L("action.selectFile"))
                     }
                     .font(.headline)
                     .foregroundColor(.white)
@@ -731,7 +731,7 @@ struct DictionaryImportSheet: View {
                 // 已选文件显示
                 if let fileURL = selectedFileURL {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("已选择文件:")
+                        Text(L("label.selectedFile"))
                             .font(.headline)
                         
                         HStack {
@@ -767,7 +767,7 @@ struct DictionaryImportSheet: View {
                                 } else {
                                     Image(systemName: "arrow.down.circle.fill")
                                 }
-                                Text(isImporting ? "正在导入..." : "开始导入")
+                                Text(isImporting ? L("action.importing") : L("action.startImport"))
                             }
                             .font(.headline)
                             .foregroundColor(.white)
@@ -783,11 +783,11 @@ struct DictionaryImportSheet: View {
                 
                 Spacer()
             }
-            .navigationTitle("导入词典")
+            .navigationTitle(L("nav.importDict"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
+                    Button(L("common.cancel")) {
                         dismiss()
                     }
                 }
@@ -811,11 +811,11 @@ struct DictionaryImportSheet: View {
     private func importModeDescription(_ mode: DictionaryImportMode) -> String {
         switch mode {
         case .enhance:
-            return "添加新词，已有词条会合并释义"
+            return L("importMode.merge")
         case .overwrite:
-            return "完全替换已有词条的释义"
+            return L("importMode.overwrite")
         case .addOnly:
-            return "只添加不存在的词条，跳过已有词条"
+            return L("importMode.addOnly")
         }
     }
     
@@ -844,7 +844,7 @@ struct DictionaryFormatGuideSheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     // JSON 格式示例
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("JSON 格式（推荐）")
+                        Text(L("format.json"))
                             .font(.headline)
                             .foregroundColor(.blue)
                         
@@ -869,7 +869,7 @@ struct DictionaryFormatGuideSheet: View {
                     
                     // CSV 格式示例
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("CSV 格式")
+                        Text(L("format.csv"))
                             .font(.headline)
                             .foregroundColor(.green)
                         
@@ -885,7 +885,7 @@ struct DictionaryFormatGuideSheet: View {
                     
                     // TXT 格式示例
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("TXT 格式（简单格式）")
+                        Text(L("format.txt"))
                             .font(.headline)
                             .foregroundColor(.orange)
                         
@@ -900,17 +900,17 @@ struct DictionaryFormatGuideSheet: View {
                     
                     // 字段说明
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("字段说明")
+                        Text(L("section.fieldDesc"))
                             .font(.headline)
                         
                         VStack(alignment: .leading, spacing: 8) {
-                            fieldRow("word", "必填", "单词本身")
-                            fieldRow("phonetic", "可选", "音标（美式）")
-                            fieldRow("partOfSpeech", "可选", "词性（n./v./adj.等）")
-                            fieldRow("definition", "必填", "中文释义，多个用分号分隔")
-                            fieldRow("example", "可选", "例句")
-                            fieldRow("frequency", "可选", "词频等级（1-5）")
-                            fieldRow("level", "可选", "词汇等级（CET4/CET6/GRE）")
+                            fieldRow("word", L("field.required"), L("field.word"))
+                            fieldRow("phonetic", L("field.optional"), L("field.phonetic"))
+                            fieldRow("partOfSpeech", L("field.optional"), L("field.pos"))
+                            fieldRow("definition", L("field.required"), L("field.definition"))
+                            fieldRow("example", L("field.optional"), L("field.example"))
+                            fieldRow("frequency", L("field.optional"), L("field.frequency"))
+                            fieldRow("level", L("field.optional"), L("field.level"))
                         }
                         .padding()
                         .background(Color(UIColor.tertiarySystemBackground))
@@ -919,16 +919,16 @@ struct DictionaryFormatGuideSheet: View {
                     
                     // 注意事项
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("注意事项")
+                        Text(L("section.notes"))
                             .font(.headline)
                             .foregroundColor(.red)
                         
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("• 每个词条的释义会完整展示，建议用分号分隔多个释义")
-                            Text("• CSV 格式中的释义如果包含逗号，请用双引号包裹")
-                            Text("• TXT 格式使用竖线 | 分隔字段")
-                            Text("• 音标建议使用 IPA 国际音标格式")
-                            Text("• 导入大文件时可能需要一些时间，请耐心等待")
+                            Text(L("note.fullDefinition"))
+                            Text(L("note.csvQuotes"))
+                            Text(L("note.txtSeparator"))
+                            Text(L("note.ipaPhonetic"))
+                            Text(L("note.largeFileWait"))
                         }
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -936,11 +936,11 @@ struct DictionaryFormatGuideSheet: View {
                 }
                 .padding()
             }
-            .navigationTitle("词典格式说明")
+            .navigationTitle(L("action.dictFormatInfo"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("关闭") {
+                    Button(L("common.close")) {
                         dismiss()
                     }
                 }
@@ -956,10 +956,10 @@ struct DictionaryFormatGuideSheet: View {
             
             Text(required)
                 .font(.caption)
-                .foregroundColor(required == "必填" ? .red : .secondary)
+                .foregroundColor(required == L("field.required") ? .red : .secondary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(required == "必填" ? Color.red.opacity(0.1) : Color.secondary.opacity(0.1))
+                .background(required == L("field.required") ? Color.red.opacity(0.1) : Color.secondary.opacity(0.1))
                 .cornerRadius(4)
             
             Text(description)
@@ -986,10 +986,10 @@ struct DictionaryExportSheet: View {
                         .font(.system(size: 48))
                         .foregroundColor(.green)
                     
-                    Text("导出自定义词典")
+                    Text(L("action.exportCustomDict"))
                         .font(.headline)
                     
-                    Text("将您导入的自定义词条导出为文件，方便备份或分享")
+                    Text(L("sheet.exportDesc"))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
@@ -998,10 +998,10 @@ struct DictionaryExportSheet: View {
                 
                 // 词条数量显示
                 VStack {
-                    Text("当前自定义词条数量:")
+                    Text(L("label.customEntryCount"))
                         .font(.subheadline)
                     
-                    Text("\(DictionaryService.shared.getCustomEntryCount()) 条")
+                    Text(String(format: L("setting.entryCountSuffix"), DictionaryService.shared.getCustomEntryCount()))
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.blue)
@@ -1009,10 +1009,10 @@ struct DictionaryExportSheet: View {
                 
                 // 格式选择
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("选择导出格式:")
+                    Text(L("label.exportFormat"))
                         .font(.headline)
-                    
-                    Picker("导出格式", selection: $selectedFormat) {
+
+                    Picker(L("setting.exportFormat"), selection: $selectedFormat) {
                         ForEach([DictionaryFileFormat.json, .csv, .txt], id: \.self) { format in
                             Text(format.rawValue).tag(format)
                         }
@@ -1031,7 +1031,7 @@ struct DictionaryExportSheet: View {
                         } else {
                             Image(systemName: "arrow.up.circle.fill")
                         }
-                        Text(isExporting ? "正在导出..." : "导出并分享")
+                        Text(isExporting ? L("action.exporting") : L("action.exportAndShare"))
                     }
                     .font(.headline)
                     .foregroundColor(.white)
@@ -1045,11 +1045,11 @@ struct DictionaryExportSheet: View {
                 
                 Spacer()
             }
-            .navigationTitle("导出词典")
+            .navigationTitle(L("nav.exportDict"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
+                    Button(L("common.cancel")) {
                         dismiss()
                     }
                 }

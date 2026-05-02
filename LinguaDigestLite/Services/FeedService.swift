@@ -23,28 +23,44 @@ class FeedService {
 
     // MARK: - RSS 解析
 
-    /// 解析RSS源
-    /// - Parameter feedUrl: RSS源URL
-    /// - Returns: 解析后的文章列表
-    func parseFeed(from feedUrl: String) async throws -> (Feed?, [Article]) {
+    /// 解析RSS源（支持条件请求）
+    func parseFeed(from feedUrl: String, etag: String? = nil, lastModified: String? = nil) async throws -> FeedFetchResult {
         guard let url = URL(string: feedUrl) else {
             throw FeedError.invalidURL
         }
 
-        let data = try await fetchData(from: url)
+        let fetchResult = try await fetchData(from: url, etag: etag, lastModified: lastModified)
+
+        if fetchResult.notModified {
+            return FeedFetchResult(feed: nil, articles: [], etag: nil, lastModified: nil, notModified: true)
+        }
 
         // 使用自定义XML解析器
-        let parser = RSSParser(data: data, feedUrl: feedUrl)
+        let parser = RSSParser(data: fetchResult.data, feedUrl: feedUrl)
         let result = parser.parse()
 
-        return (result.feed, result.articles)
+        return FeedFetchResult(
+            feed: result.feed,
+            articles: result.articles,
+            etag: fetchResult.responseEtag,
+            lastModified: fetchResult.responseLastModified,
+            notModified: false
+        )
     }
 
-    /// 获取数据
-    private func fetchData(from url: URL) async throws -> Data {
+    /// 获取数据（支持条件请求）
+    private func fetchData(from url: URL, etag: String? = nil, lastModified: String? = nil) async throws -> (data: Data, responseEtag: String?, responseLastModified: String?, notModified: Bool) {
         var request = URLRequest(url: url)
         request.setValue("Mozilla/5.0 (compatible; LinguaDigestLite/1.0)", forHTTPHeaderField: "User-Agent")
         request.setValue("application/rss+xml, application/xml, text/xml", forHTTPHeaderField: "Accept")
+
+        // Add conditional request headers
+        if let etag {
+            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
+        }
+        if let lastModified {
+            request.setValue(lastModified, forHTTPHeaderField: "If-Modified-Since")
+        }
 
         let (data, response) = try await session.data(for: request)
 
@@ -52,11 +68,19 @@ class FeedService {
             throw FeedError.invalidResponse
         }
 
+        // Handle 304 Not Modified
+        if httpResponse.statusCode == 304 {
+            return (Data(), nil, nil, true)
+        }
+
         guard httpResponse.statusCode == 200 else {
             throw FeedError.httpError(httpResponse.statusCode)
         }
 
-        return data
+        let responseEtag = httpResponse.value(forHTTPHeaderField: "ETag")
+        let responseLastModified = httpResponse.value(forHTTPHeaderField: "Last-Modified")
+
+        return (data, responseEtag, responseLastModified, false)
     }
 
     // MARK: - 全文提取
@@ -69,7 +93,8 @@ class FeedService {
             throw FeedError.invalidURL
         }
 
-        let data = try await fetchData(from: articleURL)
+        let fetchResult = try await fetchData(from: articleURL)
+        let data = fetchResult.data
         guard let html = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .ascii) else {
             throw FeedError.invalidEncoding
         }
@@ -155,10 +180,10 @@ class FeedService {
         // BBC 的 text-block 结构通常是 <div data-component="text-block">...</div>
         let pattern = "<div[^>]*data-component=\"text-block\"[^>]*>(.*?)</div>"
         
-        if let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) {
+        if let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) {
             let range = NSRange(html.startIndex..., in: html)
             let matches = regex.matches(in: html, options: [], range: range)
-            
+
             for match in matches {
                 if let contentRange = Range(match.range(at: 1), in: html) {
                     let blockContent = String(html[contentRange])
@@ -169,11 +194,11 @@ class FeedService {
                 }
             }
         }
-        
+
         // 方法2: 如果没有找到足够的块，尝试匹配 BBC 的 paragraph 标签
         if blocks.count < 3 {
             let pPattern = "<p[^>]*>(.*?)</p>"
-            if let regex = try? NSRegularExpression(pattern: pPattern, options: [.caseInsensitive]) {
+            if let regex = try? NSRegularExpression(pattern: pPattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) {
                 let range = NSRange(html.startIndex..., in: html)
                 let matches = regex.matches(in: html, options: [], range: range)
                 
@@ -351,15 +376,15 @@ class FeedService {
         // 方法1: 匹配 <p> 标签（改进版，正确处理嵌套标签）
         // 使用更简单但有效的正则，非贪婪匹配
         let pPattern = "<p[^>]*>(.*?)</p>"
-        if let regex = try? NSRegularExpression(pattern: pPattern, options: [.caseInsensitive]) {
+        if let regex = try? NSRegularExpression(pattern: pPattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) {
             let range = NSRange(html.startIndex..., in: html)
             let matches = regex.matches(in: html, options: [], range: range)
-            
+
             for match in matches {
                 if let contentRange = Range(match.range(at: 1), in: html) {
                     let paragraphHTML = String(html[contentRange])
                     let text = cleanHTMLTags(paragraphHTML)
-                    
+
                     // 只保留足够长的段落（可能是正文）
                     if text.count >= minLength && isLikelyArticleParagraph(text) {
                         paragraphs.append(text)
@@ -367,11 +392,11 @@ class FeedService {
                 }
             }
         }
-        
+
         // 方法2: 如果没有足够的段落，尝试匹配 <div> 标签（排除导航、侧边栏等）
         if paragraphs.count < 3 {
             let divPattern = "<div[^>]*(?:class=\"[^\"]*(?:content|article|body|text|story|post|entry)[^\"]*\"|id=\"[^\"]*(?:content|article|body|text|story|post|entry)[^\"]*\")[^>]*>(.*?)</div>"
-            if let regex = try? NSRegularExpression(pattern: divPattern, options: [.caseInsensitive]) {
+            if let regex = try? NSRegularExpression(pattern: divPattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) {
                 let range = NSRange(html.startIndex..., in: html)
                 let matches = regex.matches(in: html, options: [], range: range)
                 
@@ -397,7 +422,7 @@ class FeedService {
         // 方法4: 如果仍然没有内容，尝试匹配所有包含足够文本的 div
         if paragraphs.count < 2 {
             let allDivPattern = "<div[^>]*>(.*?)</div>"
-            if let regex = try? NSRegularExpression(pattern: allDivPattern, options: [.caseInsensitive]) {
+            if let regex = try? NSRegularExpression(pattern: allDivPattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) {
                 let range = NSRange(html.startIndex..., in: html)
                 let matches = regex.matches(in: html, options: [], range: range)
                 
@@ -433,10 +458,10 @@ class FeedService {
         
         // 匹配 <p> 标签
         let pPattern = "<p[^>]*>(.*?)</p>"
-        if let regex = try? NSRegularExpression(pattern: pPattern, options: [.caseInsensitive]) {
+        if let regex = try? NSRegularExpression(pattern: pPattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) {
             let range = NSRange(html.startIndex..., in: html)
             let matches = regex.matches(in: html, options: [], range: range)
-            
+
             for match in matches {
                 if let contentRange = Range(match.range(at: 1), in: html) {
                     let paragraphHTML = String(html[contentRange])
@@ -447,10 +472,10 @@ class FeedService {
                 }
             }
         }
-        
+
         return paragraphs
     }
-    
+
     /// 判断是否是导航或侧边栏文本
     private func isNavigationOrSidebar(_ text: String) -> Bool {
         let lowercased = text.lowercased()
@@ -529,11 +554,8 @@ class FeedService {
             text = text.replacingOccurrences(of: tag, with: "\n\n", options: .caseInsensitive)
         }
 
-        // 第二步：将换行标签替换为换行符
-        let brTags = ["<br>", "<br/>", "<br />", "<br/>"]
-        for tag in brTags {
-            text = text.replacingOccurrences(of: tag, with: "\n", options: .caseInsensitive)
-        }
+        // 第二步：将换行标签替换为换行符（包括带属性的 br 标签）
+        text = text.replacingOccurrences(of: "<br[^>]*>", with: "\n", options: [.caseInsensitive, .regularExpression])
 
         // 第三步：移除所有剩余的HTML标签
         text = text.replacingOccurrences(
@@ -569,11 +591,8 @@ class FeedService {
             text = text.replacingOccurrences(of: tag, with: "\n\n", options: .caseInsensitive)
         }
 
-        // 第二步：将换行标签替换为换行符
-        let brTags = ["<br>", "<br/>", "<br />", "<br/>"]
-        for tag in brTags {
-            text = text.replacingOccurrences(of: tag, with: "\n", options: .caseInsensitive)
-        }
+        // 第二步：将换行标签替换为换行符（包括带属性的 br 标签）
+        text = text.replacingOccurrences(of: "<br[^>]*>", with: "\n", options: [.caseInsensitive, .regularExpression])
 
         // 第三步：移除所有剩余的HTML标签
         text = text.replacingOccurrences(
@@ -756,8 +775,10 @@ class FeedService {
             "&quot": "\"",
             "&apos": "'"
         ]
-        
-        for (entity, replacement) in namedEntities {
+
+        // Sort by key length descending so "&quot;" is replaced before "&quot", avoiding leftover ";"
+        let sortedEntities = namedEntities.sorted { $0.key.count > $1.key.count }
+        for (entity, replacement) in sortedEntities {
             result = result.replacingOccurrences(of: entity, with: replacement, options: .caseInsensitive)
         }
         
@@ -805,8 +826,16 @@ class FeedService {
 
     private func extractMetaContent(from html: String, keys: [String]) -> String {
         for key in keys {
-            let pattern = "<meta[^>]*\(key)[^>]*content=[\"']([^\"']+)[\"'][^>]*>"
-            if let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
+            // Pattern 1: key appears before content (e.g., property="og:title" content="...")
+            let pattern1 = "<meta[^>]*\(key)[^>]*content=[\"']([^\"']+)[\"'][^>]*>"
+            if let regex = try? NSRegularExpression(pattern: pattern1, options: [.caseInsensitive]),
+               let match = regex.firstMatch(in: html, options: [], range: NSRange(html.startIndex..., in: html)),
+               let contentRange = Range(match.range(at: 1), in: html) {
+                return String(html[contentRange])
+            }
+            // Pattern 2: content appears before key (e.g., content="..." property="og:title")
+            let pattern2 = "<meta[^>]*content=[\"']([^\"']+)[\"'][^>]*\(key)[^>]*>"
+            if let regex = try? NSRegularExpression(pattern: pattern2, options: [.caseInsensitive]),
                let match = regex.firstMatch(in: html, options: [], range: NSRange(html.startIndex..., in: html)),
                let contentRange = Range(match.range(at: 1), in: html) {
                 return String(html[contentRange])
@@ -1066,12 +1095,13 @@ class RSSParser: NSObject, XMLParserDelegate {
     private func handleFeedElement(_ element: String, text: String) {
         switch element {
         case "title":
+            let cleanTitle = FeedService.cleanHTMLContent(text)
             if feed == nil {
-                feed = Feed(title: text, link: "", feedUrl: feedUrl, isBuiltIn: false)
+                feed = Feed(title: cleanTitle, link: "", feedUrl: feedUrl, isBuiltIn: false)
             } else {
                 if let existingFeed = feed {
                     var mutableFeed = existingFeed
-                    mutableFeed.title = text
+                    mutableFeed.title = cleanTitle
                     feed = mutableFeed
                 }
             }
@@ -1098,7 +1128,7 @@ class RSSParser: NSObject, XMLParserDelegate {
     private func handleItemElement(_ element: String, text: String) {
         switch element {
         case "title":
-            currentArticle?.title = text
+            currentArticle?.title = FeedService.cleanHTMLContent(text)
 
         case "link":
             currentArticle?.link = text
@@ -1109,8 +1139,10 @@ class RSSParser: NSObject, XMLParserDelegate {
         case "description", "summary":
             currentArticle?.summary = text
 
-        case "pubdate", "published", "dc:date":
-            currentArticle?.publishedAt = parseDate(text)
+        case "pubdate", "published", "dc:date", "updated":
+            if currentArticle?.publishedAt == nil {
+                currentArticle?.publishedAt = parseDate(text)
+            }
 
         case "content":
             currentArticle?.content = text
@@ -1121,30 +1153,71 @@ class RSSParser: NSObject, XMLParserDelegate {
     }
 
     private func parseDate(_ dateString: String) -> Date? {
-        // 先尝试ISO8601格式
+        let trimmed = dateString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        // 1. ISO8601 (covers most standard formats)
         let iso8601Formatter = ISO8601DateFormatter()
-        if let date = iso8601Formatter.date(from: dateString) {
+        iso8601Formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withColonSeparatorInTimeZone]
+        if let date = iso8601Formatter.date(from: trimmed) {
+            return date
+        }
+        iso8601Formatter.formatOptions = [.withInternetDateTime]
+        if let date = iso8601Formatter.date(from: trimmed) {
             return date
         }
 
-        // 再尝试其他格式
+        // 2. RFC 822 and common variants
         let dateFormats = [
-            "EEE, dd MMM yyyy HH:mm:ss Z",
-            "yyyy-MM-dd'T'HH:mm:ssZ",
-            "yyyy-MM-dd HH:mm:ss"
+            "EEE, dd MMM yyyy HH:mm:ss Z",          // Mon, 01 Jan 2024 12:00:00 +0000
+            "EEE, dd MMM yyyy HH:mm:ss zzz",        // Mon, 01 Jan 2024 12:00:00 GMT
+            "EEE, dd MMM yyyy HH:mm:ss",            // Mon, 01 Jan 2024 12:00:00 (no tz)
+            "EEE, dd MMM yyyy HH:mm Z",             // Mon, 01 Jan 2024 12:00 +0000
+            "EEE, dd MMM yyyy HH:mm zzz",           // Mon, 01 Jan 2024 12:00 GMT
+            "dd MMM yyyy HH:mm:ss Z",               // 01 Jan 2024 12:00:00 +0000
+            "dd MMM yyyy HH:mm:ss zzz",             // 01 Jan 2024 12:00:00 GMT
+            "yyyy-MM-dd'T'HH:mm:ss.SSSZ",           // 2024-01-01T12:00:00.000+0000
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",         // 2024-01-01T12:00:00.000Z
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",          // 2024-01-01T12:00:00.000+00:00
+            "yyyy-MM-dd'T'HH:mm:ssZ",               // 2024-01-01T12:00:00+0000
+            "yyyy-MM-dd'T'HH:mm:ssXXX",              // 2024-01-01T12:00:00+00:00
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",             // 2024-01-01T12:00:00Z (literal)
+            "yyyy-MM-dd'T'HH:mm:ss",                // 2024-01-01T12:00:00
+            "yyyy-MM-dd HH:mm:ss Z",                // 2024-01-01 12:00:00 +0000
+            "yyyy-MM-dd HH:mm:ss",                  // 2024-01-01 12:00:00
+            "yyyy-MM-dd",                            // 2024-01-01
+            "MM/dd/yyyy HH:mm:ss",                  // 01/01/2024 12:00:00
+            "dd/MM/yyyy HH:mm:ss",                  // 01/01/2024 12:00:00
         ]
 
         for format in dateFormats {
             let formatter = DateFormatter()
             formatter.dateFormat = format
             formatter.locale = Locale(identifier: "en_US_POSIX")
-            if let date = formatter.date(from: dateString) {
+            formatter.timeZone = TimeZone(secondsFromGMT: 0)
+            if let date = formatter.date(from: trimmed) {
                 return date
             }
         }
 
+        // 3. Unix timestamp (some feeds use epoch seconds)
+        if let timestamp = Double(trimmed), timestamp > 946684800, timestamp < 4102444800 {
+            return Date(timeIntervalSince1970: timestamp)
+        }
+
         return nil
     }
+}
+
+// MARK: - Feed Fetch Result
+
+/// Result of a feed fetch operation, supporting conditional GET
+struct FeedFetchResult {
+    let feed: Feed?
+    let articles: [Article]
+    let etag: String?
+    let lastModified: String?
+    let notModified: Bool
 }
 
 // MARK: - 错误类型

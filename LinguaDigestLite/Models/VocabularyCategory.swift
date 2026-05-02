@@ -44,56 +44,56 @@ extension VocabularyCategory {
     static var defaultCategories: [VocabularyCategory] {
         [
             VocabularyCategory(
-                name: "全部",
-                description: "所有生词",
+                name: L("category.all"),
+                description: L("category.allDesc"),
                 color: "#007AFF",
                 icon: "tray.full",
                 isDefault: true,
                 order: 0
             ),
             VocabularyCategory(
-                name: "科技",
-                description: "科技相关词汇",
+                name: L("category.tech"),
+                description: L("category.techDesc"),
                 color: "#5856D6",
                 icon: "cpu",
                 isDefault: true,
                 order: 1
             ),
             VocabularyCategory(
-                name: "政治",
-                description: "政治新闻词汇",
+                name: L("category.politics"),
+                description: L("category.politicsDesc"),
                 color: "#FF9500",
                 icon: "building.2",
                 isDefault: true,
                 order: 2
             ),
             VocabularyCategory(
-                name: "经济",
-                description: "经济财经词汇",
+                name: L("category.economy"),
+                description: L("category.economyDesc"),
                 color: "#34C759",
                 icon: "chart.line.uptrend.xyaxis",
                 isDefault: true,
                 order: 3
             ),
             VocabularyCategory(
-                name: "文化",
-                description: "文化生活词汇",
+                name: L("category.culture"),
+                description: L("category.cultureDesc"),
                 color: "#FF2D55",
                 icon: "theatermasks",
                 isDefault: true,
                 order: 4
             ),
             VocabularyCategory(
-                name: "日常",
-                description: "日常常用词汇",
+                name: L("category.daily"),
+                description: L("category.dailyDesc"),
                 color: "#64D2FF",
                 icon: "house",
                 isDefault: true,
                 order: 5
             ),
             VocabularyCategory(
-                name: "写作",
-                description: "写作表达词汇",
+                name: L("category.writing"),
+                description: L("category.writingDesc"),
                 color: "#AF52DE",
                 icon: "pencil",
                 isDefault: true,
@@ -113,16 +113,16 @@ extension VocabularyCategory {
     /// 可选颜色列表
     static var availableColors: [(name: String, hex: String)] {
         [
-            ("蓝色", "#007AFF"),
-            ("紫色", "#5856D6"),
-            ("橙色", "#FF9500"),
-            ("绿色", "#34C759"),
-            ("红色", "#FF2D55"),
-            ("青色", "#64D2FF"),
-            ("粉色", "#AF52DE"),
-            ("黄色", "#FFCC00"),
-            ("棕色", "#A2845E"),
-            ("灰色", "#8E8E93")
+            (L("color.blue"), "#007AFF"),
+            (L("color.purple"), "#5856D6"),
+            (L("color.orange"), "#FF9500"),
+            (L("color.green"), "#34C759"),
+            (L("color.red"), "#FF2D55"),
+            (L("color.teal"), "#64D2FF"),
+            (L("color.pink"), "#AF52DE"),
+            (L("color.yellow"), "#FFCC00"),
+            (L("color.brown"), "#A2845E"),
+            (L("color.gray"), "#8E8E93")
         ]
     }
     

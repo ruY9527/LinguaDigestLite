@@ -10,13 +10,14 @@ import SwiftUI
 /// RSS源列表视图
 struct FeedListView: View {
     @ObservedObject var viewModel: FeedViewModel
-    
+
     @State private var showingAddFeed: Bool = false
     @State private var newFeedTitle: String = ""
     @State private var newFeedUrl: String = ""
     @State private var showingErrorMessage: Bool = false
     @State private var showingRebuildConfirmation: Bool = false
-    
+    @State private var showingRefreshLog: Bool = false
+
     var body: some View {
         NavigationStack {
             Group {
@@ -26,13 +27,22 @@ struct FeedListView: View {
                     feedList
                 }
             }
-            .navigationTitle("订阅源")
+            .navigationTitle(L("nav.feeds"))
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        showingRebuildConfirmation = true
-                    } label: {
-                        Image(systemName: "arrow.triangle.2.circlepath.circle")
+                    HStack(spacing: 12) {
+                        Button {
+                            showingRebuildConfirmation = true
+                        } label: {
+                            Image(systemName: "arrow.triangle.2.circlepath.circle")
+                        }
+
+                        Button {
+                            viewModel.loadRefreshLogs()
+                            showingRefreshLog = true
+                        } label: {
+                            Image(systemName: "clock.arrow.circlepath")
+                        }
                     }
                 }
 
@@ -66,67 +76,125 @@ struct FeedListView: View {
                     }
                 )
             }
-            .alert("错误", isPresented: $showingErrorMessage) {
-                Button("确定", role: .cancel) { }
-            } message: {
-                Text(viewModel.errorMessage ?? "未知错误")
+            .sheet(isPresented: $showingRefreshLog) {
+                RefreshLogView(viewModel: viewModel)
             }
-            .alert("重新订阅全部内置RSS？", isPresented: $showingRebuildConfirmation) {
-                Button("取消", role: .cancel) { }
-                Button("重新订阅", role: .destructive) {
+            .alert(L("common.error"), isPresented: $showingErrorMessage) {
+                Button(L("common.ok"), role: .cancel) { }
+            } message: {
+                Text(viewModel.errorMessage ?? L("error.unknown"))
+            }
+            .alert(L("action.resubscribeAll"), isPresented: $showingRebuildConfirmation) {
+                Button(L("common.cancel"), role: .cancel) { }
+                Button(L("action.resubscribe"), role: .destructive) {
                     Task {
                         await viewModel.rebuildAllBuiltInSubscriptions()
                     }
                 }
             } message: {
-                Text("这会重建所有内置订阅源，并重新抓取文章内容。")
+                Text(L("alert.resubscribeMsg"))
             }
             .onChange(of: viewModel.errorMessage) { newValue in
                 showingErrorMessage = newValue != nil
             }
         }
     }
-    
+
     /// RSS源列表
     private var feedList: some View {
         List {
+            if let summary = viewModel.lastRefreshSummary {
+                Section {
+                    Button {
+                        viewModel.loadRefreshLogs()
+                        showingRefreshLog = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: viewModel.lastRefreshHadFailure ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                                .foregroundColor(viewModel.lastRefreshHadFailure ? .orange : .green)
+                            Text(summary)
+                                .font(.subheadline)
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+
             // 内置RSS源
-            Section("内置订阅源") {
+            Section(L("section.builtInFeeds")) {
                 ForEach(viewModel.builtInFeeds, id: \.id) { feed in
-                    FeedRowView(feed: feed) {
-                        viewModel.toggleFeedActive(feed)
+                    let refreshing = viewModel.isRefreshing(feed.id)
+                    FeedRowView(
+                        feed: feed,
+                        lastRefreshLog: viewModel.latestRefreshLog(for: feed.id),
+                        isRefreshing: refreshing,
+                        onToggleActive: {
+                            viewModel.toggleFeedActive(feed)
+                        }
+                    )
+                    .swipeActions(edge: .leading) {
+                        Button {
+                            Task { await viewModel.refreshFeed(feed) }
+                        } label: {
+                            Label(refreshing ? L("action.refreshing") : L("action.refresh"), systemImage: "arrow.clockwise")
+                        }
+                        .tint(.blue)
+                        .disabled(refreshing)
                     }
                     .swipeActions(edge: .trailing) {
                         Button {
                             viewModel.toggleFeedActive(feed)
                         } label: {
-                            Label(feed.isActive ? "禁用" : "启用", systemImage: feed.isActive ? "pause" : "play")
+                            Label(feed.isActive ? L("action.disable") : L("action.enable"), systemImage: feed.isActive ? "pause" : "play")
                         }
                         .tint(feed.isActive ? .gray : .green)
+                        .disabled(refreshing)
                     }
                 }
             }
-            
+
             // 用户添加的RSS源
             if !viewModel.userFeeds.isEmpty {
-                Section("我的订阅源") {
+                Section(L("section.myFeeds")) {
                     ForEach(viewModel.userFeeds, id: \.id) { feed in
-                        FeedRowView(feed: feed) {
-                            viewModel.toggleFeedActive(feed)
+                        let refreshing = viewModel.isRefreshing(feed.id)
+                        FeedRowView(
+                            feed: feed,
+                            lastRefreshLog: viewModel.latestRefreshLog(for: feed.id),
+                            isRefreshing: refreshing,
+                            onToggleActive: {
+                                viewModel.toggleFeedActive(feed)
+                            }
+                        )
+                        .swipeActions(edge: .leading) {
+                            Button {
+                                Task { await viewModel.refreshFeed(feed) }
+                            } label: {
+                                Label(refreshing ? L("action.refreshing") : L("action.refresh"), systemImage: "arrow.clockwise")
+                            }
+                            .tint(.blue)
+                            .disabled(refreshing)
                         }
                         .swipeActions(edge: .trailing) {
                             Button {
                                 viewModel.toggleFeedActive(feed)
                             } label: {
-                                Label(feed.isActive ? "禁用" : "启用", systemImage: feed.isActive ? "pause" : "play")
+                                Label(feed.isActive ? L("action.disable") : L("action.enable"), systemImage: feed.isActive ? "pause" : "play")
                             }
                             .tint(feed.isActive ? .gray : .green)
-                            
+                            .disabled(refreshing)
+
                             Button(role: .destructive) {
                                 viewModel.deleteFeed(feed)
                             } label: {
-                                Label("删除", systemImage: "trash")
+                                Label(L("common.delete"), systemImage: "trash")
                             }
+                            .disabled(refreshing)
                         }
                     }
                 }
@@ -135,33 +203,33 @@ struct FeedListView: View {
         .listStyle(.insetGrouped)
         .overlay {
             if viewModel.isLoading {
-                ProgressView("刷新中...")
+                ProgressView(L("status.processing"))
                     .padding()
                     .background(.ultraThinMaterial)
                     .cornerRadius(12)
             }
         }
     }
-    
+
     /// 空状态视图
     private var emptyStateView: some View {
         VStack(spacing: 16) {
             Image(systemName: "link.circle")
                 .font(.system(size: 60))
                 .foregroundColor(.gray)
-            
-            Text("暂无订阅源")
+
+            Text(L("empty.noFeeds"))
                 .font(.headline)
                 .foregroundColor(.secondary)
-            
-            Text("请添加RSS订阅源以获取文章内容")
+
+            Text(L("empty.noFeedsHint"))
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-            
+
             Button {
                 showingAddFeed = true
             } label: {
-                Text("添加订阅源")
+                Text(L("action.addFeed"))
                     .font(.headline)
                     .foregroundColor(.white)
                     .padding(.horizontal, 20)
@@ -177,12 +245,17 @@ struct FeedListView: View {
 /// RSS源行视图
 struct FeedRowView: View {
     let feed: Feed
+    let lastRefreshLog: RefreshLogEntry?
+    let isRefreshing: Bool
     let onToggleActive: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            // RSS源图标
-            if let imageUrl = feed.imageUrl, let url = URL(string: imageUrl) {
+            // RSS源图标 / 刷新中转圈
+            if isRefreshing {
+                ProgressView()
+                    .frame(width: 40, height: 40)
+            } else if let imageUrl = feed.imageUrl, let url = URL(string: imageUrl) {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .success(let image):
@@ -211,7 +284,7 @@ struct FeedRowView: View {
                     Text(feed.title)
                         .font(.headline)
                         .lineLimit(1)
-                    
+
                     // 用户备注标签
                     if let notes = feed.notes, !notes.isEmpty {
                         Text(notes)
@@ -232,8 +305,36 @@ struct FeedRowView: View {
                         .lineLimit(1)
                 }
 
-                if let lastUpdated = feed.lastUpdated {
-                    Text("最后更新: \(formatDate(lastUpdated))")
+                // 刷新状态行
+                if isRefreshing {
+                    HStack(spacing: 4) {
+                        ProgressView()
+                            .controlSize(.mini)
+                        Text(L("status.refreshing"))
+                            .font(.caption2)
+                            .foregroundColor(.blue)
+                    }
+                } else if let log = lastRefreshLog {
+                    HStack(spacing: 4) {
+                        if log.isSuccess {
+                            Text(String(format: L("status.refreshSuccess"), log.addedCount))
+                                .font(.caption2)
+                                .foregroundColor(.green)
+                        } else {
+                            Text(log.errorDetail)
+                                .font(.caption2)
+                                .foregroundColor(.red)
+                                .lineLimit(1)
+                        }
+                        Text("·")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        Text(formatDate(log.timestamp))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                } else if let lastUpdated = feed.lastUpdated {
+                    Text(String(format: L("status.lastUpdated"), formatDate(lastUpdated)))
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
@@ -251,7 +352,7 @@ struct FeedRowView: View {
             onToggleActive()
         }
     }
-    
+
     /// RSS源图标占位
     private var feedIconPlaceholder: some View {
         Image(systemName: "newspaper.fill")
@@ -260,7 +361,7 @@ struct FeedRowView: View {
             .background(Color.gray.opacity(0.1))
             .cornerRadius(8)
     }
-    
+
     /// 格式化日期
     private func formatDate(_ date: Date) -> String {
         let formatter = RelativeDateTimeFormatter()
@@ -275,46 +376,46 @@ struct AddFeedSheet: View {
     @Binding var url: String
     let onAdd: () -> Void
     let onCancel: () -> Void
-    
+
     var body: some View {
         NavigationStack {
             Form {
-                Section("RSS源信息") {
-                    TextField("名称", text: $title)
+                Section(L("feed.info")) {
+                    TextField(L("feed.name"), text: $title)
                         .textContentType(.name)
-                    
-                    TextField("RSS链接", text: $url)
+
+                    TextField(L("feed.url"), text: $url)
                         .textContentType(.URL)
                         .autocapitalization(.none)
                         .keyboardType(.URL)
                 }
-                
+
                 Section {
                     Button {
                         onAdd()
                     } label: {
                         HStack {
                             Spacer()
-                            Text("添加")
+                            Text(L("common.add"))
                                 .fontWeight(.semibold)
                             Spacer()
                         }
                     }
                     .disabled(title.isEmpty || url.isEmpty)
-                    
+
                     Button {
                         onCancel()
                     } label: {
                         HStack {
                             Spacer()
-                            Text("取消")
+                            Text(L("common.cancel"))
                                 .foregroundColor(.secondary)
                             Spacer()
                         }
                     }
                 }
             }
-            .navigationTitle("添加订阅源")
+            .navigationTitle(L("nav.addFeed"))
             .navigationBarTitleDisplayMode(.inline)
         }
     }

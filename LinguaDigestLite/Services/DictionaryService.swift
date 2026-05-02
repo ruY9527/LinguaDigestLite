@@ -298,12 +298,14 @@ class DictionaryService {
 
     func splitDefinitions(_ definition: String) -> [String] {
         let normalized = definition
+            .replacingOccurrences(of: "\\n", with: "\n")
             .replacingOccurrences(of: "、", with: "；")
             .replacingOccurrences(of: ";", with: "；")
             .replacingOccurrences(of: "|", with: "；")
 
+        let separators = CharacterSet(charactersIn: "；\n")
         return normalized
-            .components(separatedBy: "；")
+            .components(separatedBy: separators)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
     }
@@ -533,29 +535,29 @@ extension DictionaryService {
     }
 
     static func displayNameForPartOfSpeech(_ pos: String?) -> String {
-        guard let pos = pos else { return "释义" }
+        guard let pos = pos else { return L("pos.definitions") }
         switch pos {
-        case "noun": return "名词"
-        case "verb": return "动词"
-        case "adjective": return "形容词"
-        case "adverb": return "副词"
-        case "pronoun": return "代词"
-        case "preposition": return "介词"
-        case "conjunction": return "连词"
-        case "determiner": return "限定词"
-        case "interjection": return "感叹词"
+        case "noun": return L("pos.noun")
+        case "verb": return L("pos.verb")
+        case "adjective": return L("pos.adjective")
+        case "adverb": return L("pos.adverb")
+        case "pronoun": return L("pos.pronoun")
+        case "preposition": return L("pos.preposition")
+        case "conjunction": return L("pos.conjunction")
+        case "determiner": return L("pos.determiner")
+        case "interjection": return L("pos.interjection")
         // ECDICT 专业领域标签
-        case "computer": return "计算机"
-        case "medical": return "医学"
-        case "slang": return "网络"
-        case "electronics": return "电子"
-        case "legal": return "法律"
-        case "economics": return "经济"
-        case "chemistry": return "化学"
-        case "physics": return "物理"
-        case "math": return "数学"
-        case "biology": return "生物"
-        case "pharmacy": return "医药"
+        case "computer": return L("pos.computing")
+        case "medical": return L("pos.medical")
+        case "slang": return L("pos.internet")
+        case "electronics": return L("pos.electronics")
+        case "legal": return L("pos.legal")
+        case "economics": return L("pos.economics")
+        case "chemistry": return L("pos.chemistry")
+        case "physics": return L("pos.physics")
+        case "math": return L("pos.mathematics")
+        case "biology": return L("pos.biology")
+        case "pharmacy": return L("pos.pharmacy")
         default: return pos
         }
     }
