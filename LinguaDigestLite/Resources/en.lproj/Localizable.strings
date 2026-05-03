@@ -129,6 +129,7 @@
 "section.addToCategory" = "Add to Category";
 "action.addToVocab" = "Add to Vocabulary";
 "action.translateSentence" = "Translate Sentence";
+"action.clearSelection" = "Clear Selection";
 "category.addLabel" = "Add to: %@";
 "section.quickDef" = "Quick Definition";
 "hint.systemDictSwitched" = "Switched to the full iOS English-Chinese dictionary below.";

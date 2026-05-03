@@ -7,12 +7,16 @@
 
 import SwiftUI
 import UIKit
+#if canImport(Translation)
+import Translation
+#endif
 
 /// 阅读器视图
 struct ReaderView: View {
     let article: Article
 
     @StateObject private var viewModel: ReaderViewModel
+    @StateObject private var textTranslationViewModel = TextTranslationViewModel()
     @Environment(\.dismiss) private var dismiss
 
     init(article: Article) {
@@ -103,16 +107,19 @@ struct ReaderView: View {
                     SystemDictionarySheetView(viewModel: viewModel, word: word)
                 }
             }
-            .sheet(isPresented: $viewModel.showingSentenceTranslation) {
-                SentenceTranslationSheet(viewModel: viewModel)
-            }
-            .alert(L("action.selectTranslation"), isPresented: $viewModel.showingTranslationMenu) {
-                ForEach(viewModel.availableTranslationServices, id: \.self) { serviceType in
-                    Button(serviceType.displayName) {
-                        viewModel.translateWithService(type: serviceType)
-                    }
+            .systemTranslationPresentation(
+                isPresented: $textTranslationViewModel.showingNativeTranslation,
+                text: textTranslationViewModel.selectedText ?? ""
+            )
+            .onChange(of: textTranslationViewModel.showingNativeTranslation) { isPresented in
+                if !isPresented, textTranslationViewModel.selectedText != nil {
+                    textTranslationViewModel.close()
                 }
-                Button(L("common.cancel"), role: .cancel) {}
+            }
+            .sheet(isPresented: $textTranslationViewModel.showingFallbackSheet, onDismiss: {
+                textTranslationViewModel.close()
+            }) {
+                SentenceTranslationSheet(viewModel: textTranslationViewModel)
             }
         }
     }
@@ -251,8 +258,9 @@ struct ReaderView: View {
             onCloseWordDefinition: {
                 viewModel.closeWordDefinition()
             },
-            onSentenceSelect: { sentence, range in
-                viewModel.selectSentenceForTranslation(sentence, range: range)
+            clearSelectionRequestID: textTranslationViewModel.clearSelectionRequestID,
+            onTranslateSelection: { text, range in
+                textTranslationViewModel.requestTranslation(for: text, range: range)
             }
         )
         .padding(20)
@@ -698,6 +706,59 @@ struct ReaderMetaPill: View {
     }
 }
 
+final class ReaderTextView: UITextView {
+    var onTranslateSelectedText: ((String, NSRange) -> Void)?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        UIMenuController.shared.menuItems = [
+            UIMenuItem(title: L("action.translateSentence"), action: #selector(translateSelectedText(_:))),
+            UIMenuItem(title: L("action.clearSelection"), action: #selector(clearTextSelection(_:)))
+        ]
+    }
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        if action == #selector(translateSelectedText(_:)) ||
+            action == #selector(clearTextSelection(_:)) {
+            return selectedRange.length > 0
+        }
+        return super.canPerformAction(action, withSender: sender)
+    }
+
+    @available(iOS 16.0, *)
+    override func editMenu(for textRange: UITextRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        let translateAction = UIAction(
+            title: L("action.translateSentence"),
+            image: UIImage(systemName: "character.bubble")
+        ) { [weak self] _ in
+            self?.translateSelectedText(nil)
+        }
+
+        let clearSelectionAction = UIAction(
+            title: L("action.clearSelection"),
+            image: UIImage(systemName: "xmark.circle")
+        ) { [weak self] _ in
+            self?.clearTextSelection(nil)
+        }
+
+        return UIMenu(children: suggestedActions + [translateAction, clearSelectionAction])
+    }
+
+    @objc func translateSelectedText(_ sender: Any?) {
+        guard selectedRange.length > 0 else { return }
+
+        let sourceText = attributedText?.string ?? text ?? ""
+        let selectedText = (sourceText as NSString).substring(with: selectedRange)
+        onTranslateSelectedText?(selectedText, selectedRange)
+    }
+
+    @objc func clearTextSelection(_ sender: Any?) {
+        selectedRange = NSRange(location: 0, length: 0)
+        resignFirstResponder()
+        UIMenuController.shared.hideMenu()
+    }
+}
+
 struct ArticleReaderTextView: UIViewRepresentable {
     let content: String
     let fontSize: CGFloat
@@ -706,10 +767,11 @@ struct ArticleReaderTextView: UIViewRepresentable {
     let backgroundColor: UIColor
     let onWordDoubleTap: (String, CGPoint) -> Void
     let onCloseWordDefinition: () -> Void
-    let onSentenceSelect: ((String, NSRange) -> Void)?  // 句子选择回调
+    let clearSelectionRequestID: Int
+    let onTranslateSelection: (String, NSRange) -> Void
 
     func makeUIView(context: Context) -> UITextView {
-        let textView = UITextView()
+        let textView = ReaderTextView()
         textView.isEditable = false
         textView.isScrollEnabled = false
         textView.isSelectable = true
@@ -719,6 +781,7 @@ struct ArticleReaderTextView: UIViewRepresentable {
         textView.textContainer.lineFragmentPadding = 0
 
         textView.attributedText = buildFullText()
+        textView.onTranslateSelectedText = onTranslateSelection
 
         // 添加双击手势识别器（查单词）
         let doubleTapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleDoubleTap(_:)))
@@ -731,13 +794,10 @@ struct ArticleReaderTextView: UIViewRepresentable {
         singleTapGesture.require(toFail: doubleTapGesture)
         textView.addGestureRecognizer(singleTapGesture)
         
-        // 添加长按手势识别器（句子翻译）
+        // 长按可快速选中当前句子，随后通过系统编辑菜单触发翻译。
         let longPressGesture = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress(_:)))
         longPressGesture.minimumPressDuration = 0.5
         textView.addGestureRecognizer(longPressGesture)
-        
-        // 添加翻译菜单项
-        context.coordinator.setupTranslationMenu(textView)
 
         return textView
     }
@@ -745,6 +805,13 @@ struct ArticleReaderTextView: UIViewRepresentable {
     func updateUIView(_ textView: UITextView, context: Context) {
         textView.backgroundColor = backgroundColor
         textView.attributedText = buildFullText()
+        if let textView = textView as? ReaderTextView {
+            textView.onTranslateSelectedText = onTranslateSelection
+        }
+        context.coordinator.handleClearSelectionIfNeeded(
+            requestID: clearSelectionRequestID,
+            textView: textView
+        )
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
@@ -754,7 +821,11 @@ struct ArticleReaderTextView: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onWordDoubleTap: onWordDoubleTap, onCloseWordDefinition: onCloseWordDefinition, onSentenceSelect: onSentenceSelect)
+        Coordinator(
+            onWordDoubleTap: onWordDoubleTap,
+            onCloseWordDefinition: onCloseWordDefinition,
+            handledClearSelectionRequestID: clearSelectionRequestID
+        )
     }
 
     /// 构建正文文本
@@ -849,24 +920,28 @@ struct ArticleReaderTextView: UIViewRepresentable {
     class Coordinator: NSObject {
         let onWordDoubleTap: (String, CGPoint) -> Void
         let onCloseWordDefinition: () -> Void
-        let onSentenceSelect: ((String, NSRange) -> Void)?
-        
-        private weak var textView: UITextView?
+        private var handledClearSelectionRequestID: Int
 
-        init(onWordDoubleTap: @escaping (String, CGPoint) -> Void, onCloseWordDefinition: @escaping () -> Void, onSentenceSelect: ((String, NSRange) -> Void)? = nil) {
+        init(
+            onWordDoubleTap: @escaping (String, CGPoint) -> Void,
+            onCloseWordDefinition: @escaping () -> Void,
+            handledClearSelectionRequestID: Int
+        ) {
             self.onWordDoubleTap = onWordDoubleTap
             self.onCloseWordDefinition = onCloseWordDefinition
-            self.onSentenceSelect = onSentenceSelect
+            self.handledClearSelectionRequestID = handledClearSelectionRequestID
         }
-        
-        /// 设置翻译菜单
-        func setupTranslationMenu(_ textView: UITextView) {
-            self.textView = textView
-            
-            // 创建自定义菜单项
-            let translateMenuItem = UIMenuItem(title: L("action.translateSentence"), action: #selector(Coordinator.translateSelectedText))
-            UIMenuController.shared.menuItems = [translateMenuItem]
-            UIMenuController.shared.update()
+
+        func handleClearSelectionIfNeeded(requestID: Int, textView: UITextView) {
+            guard requestID != handledClearSelectionRequestID else { return }
+
+            handledClearSelectionRequestID = requestID
+            if let textView = textView as? ReaderTextView {
+                textView.clearTextSelection(nil)
+            } else {
+                textView.selectedRange = NSRange(location: 0, length: 0)
+                textView.resignFirstResponder()
+            }
         }
 
         @objc func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
@@ -908,25 +983,15 @@ struct ArticleReaderTextView: UIViewRepresentable {
                 
                 let cleanedSentence = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
                 
-                if cleanedSentence.count >= 5, let callback = onSentenceSelect {
-                    callback(cleanedSentence, sentenceRange)
-                    // 高亮选中的句子
+                if cleanedSentence.count >= 5 {
                     textView.selectedRange = sentenceRange
-                }
-            }
-        }
-        
-        /// 翻译选中的文本（菜单项动作）
-        @objc func translateSelectedText() {
-            guard let textView = textView else { return }
-            let selectedRange = textView.selectedRange
-            
-            if selectedRange.length > 0 {
-                let text = textView.attributedText.string as NSString
-                let selectedText = text.substring(with: selectedRange)
-                
-                if let callback = onSentenceSelect {
-                    callback(selectedText, selectedRange)
+                    textView.becomeFirstResponder()
+                    if let start = textView.position(from: textView.beginningOfDocument, offset: sentenceRange.location),
+                       let end = textView.position(from: start, offset: sentenceRange.length),
+                       let textRange = textView.textRange(from: start, to: end) {
+                        let rect = textView.firstRect(for: textRange)
+                        UIMenuController.shared.showMenu(from: textView, rect: rect)
+                    }
                 }
             }
         }
@@ -1228,7 +1293,7 @@ private final class DictionaryContainerViewController: UIViewController {
 // MARK: - 句子翻译弹窗
 
 private struct SentenceTranslationSheet: View {
-    @ObservedObject var viewModel: ReaderViewModel
+    @ObservedObject var viewModel: TextTranslationViewModel
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -1241,7 +1306,7 @@ private struct SentenceTranslationSheet: View {
                         .foregroundColor(.secondary)
 
                     ScrollView {
-                        Text(viewModel.selectedSentence ?? "")
+                        Text(viewModel.selectedText ?? "")
                             .font(.body)
                             .foregroundColor(.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1263,16 +1328,16 @@ private struct SentenceTranslationSheet: View {
 
                     ScrollView {
                         VStack(spacing: 12) {
-                            ForEach(viewModel.availableTranslationServices, id: \.self) { serviceType in
+                            ForEach(viewModel.availableServices, id: \.self) { serviceType in
                                 Button {
-                                    viewModel.translateWithService(type: serviceType)
+                                    viewModel.translateWithService(serviceType)
                                 } label: {
                                     HStack {
                                         Image(systemName: iconForService(serviceType))
                                             .font(.title2)
                                             .foregroundColor(colorForService(serviceType))
 
-                                        Text(serviceType.rawValue)
+                                        Text(serviceType.displayName)
                                             .font(.headline)
                                             .foregroundColor(.primary)
 
@@ -1303,17 +1368,7 @@ private struct SentenceTranslationSheet: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(L("common.close")) {
                         dismiss()
-                        viewModel.closeSentenceTranslation()
-                    }
-                }
-
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        if let sentence = viewModel.selectedSentence {
-                            viewModel.speakSentence(sentence)
-                        }
-                    } label: {
-                        Image(systemName: "speaker.wave.3.fill")
+                        viewModel.close()
                     }
                 }
             }
@@ -1346,6 +1401,26 @@ private struct SentenceTranslationSheet: View {
         case .deepL:
             return .purple
         }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func systemTranslationPresentation(isPresented: Binding<Bool>, text: String) -> some View {
+#if canImport(Translation)
+        if #available(iOS 17.4, *) {
+            self.translationPresentation(
+                isPresented: isPresented,
+                text: text,
+                attachmentAnchor: .rect(.bounds),
+                arrowEdge: .bottom
+            )
+        } else {
+            self
+        }
+#else
+        self
+#endif
     }
 }
 

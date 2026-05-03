@@ -22,6 +22,7 @@ class DatabaseManager {
             ensureVocabularyCategoryIdsColumn()
             try migrateFromUserDefaults()
             syncBuiltInFeeds()
+            sanitizeLiteralNilValues()
             initializeCategories()
         } catch {
             print("❌ DatabaseManager init failed: \(error)")
@@ -159,6 +160,20 @@ class DatabaseManager {
         try? db?.execute("ALTER TABLE vocabulary ADD COLUMN categoryIds TEXT")
     }
 
+    private func sanitizeLiteralNilValues() {
+        let cleanupStatements = [
+            "UPDATE feeds SET description = NULL WHERE description = 'nil'",
+            "UPDATE feeds SET notes = NULL WHERE notes = 'nil'",
+            "UPDATE feeds SET imageUrl = NULL WHERE imageUrl = 'nil'",
+            "UPDATE feeds SET etag = NULL WHERE etag = 'nil'",
+            "UPDATE feeds SET lastModified = NULL WHERE lastModified = 'nil'"
+        ]
+
+        for statement in cleanupStatements {
+            try? db?.execute(statement)
+        }
+    }
+
     private func uniqueCategoryIds(from categoryIds: [UUID]) -> [UUID] {
         var seen = Set<UUID>()
         return categoryIds.filter { seen.insert($0).inserted }
@@ -256,7 +271,7 @@ class DatabaseManager {
              isActive, isBuiltIn, createdAt, updateInterval, etag, lastModified, lastRefreshTime, consecutiveErrors)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, params: [
-            feed.id.uuidString, feed.title, feed.link ?? "", feed.feedUrl,
+            feed.id.uuidString, feed.title, feed.link, feed.feedUrl,
             feed.description as Any, feed.notes as Any, feed.imageUrl as Any,
             feed.lastUpdated?.timeIntervalSince1970 as Any,
             feed.isActive ? 1 : 0, feed.isBuiltIn ? 1 : 0,
@@ -340,13 +355,13 @@ class DatabaseManager {
             title: title,
             link: (row["link"] as? String) ?? "",
             feedUrl: feedUrl,
-            description: row["description"] as? String,
-            notes: row["notes"] as? String,
-            imageUrl: row["imageUrl"] as? String,
+            description: optionalString(row["description"]),
+            notes: optionalString(row["notes"]),
+            imageUrl: optionalString(row["imageUrl"]),
             isBuiltIn: (row["isBuiltIn"] as? Int64) == 1,
             updateInterval: Int(row["updateInterval"] as? Int64 ?? 60),
-            etag: row["etag"] as? String,
-            lastModified: row["lastModified"] as? String,
+            etag: optionalString(row["etag"]),
+            lastModified: optionalString(row["lastModified"]),
             lastRefreshTime: (row["lastRefreshTime"] as? Double).map { Date(timeIntervalSince1970: $0) },
             consecutiveErrors: Int(row["consecutiveErrors"] as? Int64 ?? 0)
         )
@@ -356,6 +371,11 @@ class DatabaseManager {
             feed.createdAt = Date(timeIntervalSince1970: createdAtTs)
         }
         return feed
+    }
+
+    private func optionalString(_ value: Any?) -> String? {
+        guard let string = value as? String, string != "nil", !string.isEmpty else { return nil }
+        return string
     }
 
     // MARK: - Article Operations

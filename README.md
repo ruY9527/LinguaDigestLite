@@ -57,8 +57,8 @@
 - **英文释义**：提供英文解释，助力沉浸式学习
 
 ### 🌐 翻译与理解
-- **iOS 17.4+ 内置翻译**：支持离线翻译，完全在设备端执行
-- **句子级翻译**：选中句子快速翻译
+- **iOS 17.4+ 原生翻译**：长按选中句子，调用系统原生翻译（完全设备端执行，支持离线）
+- **多翻译服务**：支持系统翻译、Google翻译、百度翻译、DeepL翻译
 - **段落总结**：利用Apple Intelligence或第三方API
 
 ### 🎧 语音学习
@@ -109,7 +109,8 @@ LinguaDigestLite/
 │   │   ├── ArticleViewModel.swift     # 文章数据管理
 │   │   ├── FeedViewModel.swift       # RSS源数据管理
 │   │   ├── VocabularyViewModel.swift # 生词数据管理
-│   │   └── ReaderViewModel.swift     # 阅读器状态管理
+│   │   ├── ReaderViewModel.swift     # 阅读器状态管理
+│   │   └── TextTranslationViewModel.swift # 文本翻译状态管理
 │   ├── Services/
 │   │   ├── DatabaseManager.swift           # SQLite数据库管理
 │   │   ├── FeedService.swift              # RSS解析服务
@@ -251,6 +252,11 @@ LinguaDigestLite 是一款**纯本地应用**，高度重视用户隐私：
 ---
 
 ## 最近更新
+
+### v1.3.0 (2026-05-03)
+- ✨ **原生句子翻译**：长按选中句子，调用 iOS 17.4+ 系统原生翻译（完全设备端，支持离线）
+- ✨ 多翻译服务支持：系统翻译、Google翻译、百度翻译、DeepL翻译
+- 🔧 重构翻译功能代码，翻译逻辑与阅读器解耦
 
 ### v1.2.0 (2026-05-03)
 - ✨ 生词本多分类支持：生词可同时属于多个分类

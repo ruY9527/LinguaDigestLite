@@ -129,6 +129,7 @@
 "section.addToCategory" = "添加到分类";
 "action.addToVocab" = "加入生词本";
 "action.translateSentence" = "翻译句子";
+"action.clearSelection" = "取消选择";
 "category.addLabel" = "加入分类: %@";
 "section.quickDef" = "快速释义";
 "hint.systemDictSwitched" = "下方已切换到系统完整英汉词典。";

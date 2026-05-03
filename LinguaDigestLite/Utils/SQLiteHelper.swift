@@ -120,7 +120,16 @@ class SQLiteHelper {
         for (index, param) in params.enumerated() {
             let i = Int32(index + 1)
             let result: Int32
-            switch param {
+
+            guard let value = unwrapOptional(param) else {
+                result = sqlite3_bind_null(stmt, i)
+                guard result == SQLITE_OK else {
+                    throw SQLiteError.bindingFailed("Failed to bind param at index \(index): \(lastError)")
+                }
+                continue
+            }
+
+            switch value {
             case let val as String:
                 result = sqlite3_bind_text(stmt, i, val, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
             case let val as Int:
@@ -138,12 +147,20 @@ class SQLiteHelper {
                     sqlite3_bind_blob(stmt, i, ptr.baseAddress, Int32(val.count), unsafeBitCast(-1, to: sqlite3_destructor_type.self))
                 }
             default:
-                result = sqlite3_bind_text(stmt, i, "\(param)", -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+                result = sqlite3_bind_text(stmt, i, "\(value)", -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
             }
             guard result == SQLITE_OK else {
                 throw SQLiteError.bindingFailed("Failed to bind param at index \(index): \(lastError)")
             }
         }
+    }
+
+    private func unwrapOptional(_ value: Any) -> Any? {
+        let mirror = Mirror(reflecting: value)
+        guard mirror.displayStyle == .optional else {
+            return value
+        }
+        return mirror.children.first?.value
     }
 
     private func readRows(_ stmt: OpaquePointer?) throws -> [[String: Any]] {

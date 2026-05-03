@@ -39,17 +39,9 @@ class ReaderViewModel: ObservableObject {
     @Published var selectedWordGroupedDefinitions: [(pos: String, definitions: [String])] = []
     @Published var selectedWordEnglishDefinition: String?
     
-    // 句子翻译相关
-    @Published var showingSentenceTranslation: Bool = false
-    @Published var selectedSentence: String?
-    @Published var selectedSentenceRange: NSRange?
-    @Published var showingTranslationMenu: Bool = false
-    @Published var availableTranslationServices: [TranslationServiceType] = []
-
     private let databaseManager = DatabaseManager.shared
     private let feedService = FeedService.shared
     private let dictionaryService = DictionaryService.shared
-    private let translationService = TranslationService.shared
     private let speechSynthesizer = AVSpeechSynthesizer()
     private var cancellables = Set<AnyCancellable>()
 
@@ -57,9 +49,6 @@ class ReaderViewModel: ObservableObject {
         self.article = article
         self.isFavorite = article.isFavorite
         
-        // 初始化可用翻译服务列表
-        availableTranslationServices = translationService.availableTranslationServiceTypes()
-
         loadContent()
         loadCategories()
     }
@@ -221,53 +210,6 @@ class ReaderViewModel: ObservableObject {
         selectedCategoryIdsForWord = []
     }
     
-    // MARK: - 句子翻译
-    
-    /// 选择句子进行翻译
-    func selectSentenceForTranslation(_ sentence: String, range: NSRange? = nil) {
-        let trimmedSentence = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmedSentence.count >= 5 else { return }
-        
-        selectedSentence = trimmedSentence
-        selectedSentenceRange = range
-        showingSentenceTranslation = true
-        
-        // 自动使用系统翻译
-        translateSelectedSentence()
-    }
-    
-    /// 翻译选中的句子
-    func translateSelectedSentence() {
-        guard let sentence = selectedSentence, !sentence.isEmpty else { return }
-        
-        // 使用系统翻译
-        translationService.translateWithSystemApp(text: sentence)
-    }
-    
-    /// 使用指定翻译服务翻译
-    func translateWithService(type: TranslationServiceType) {
-        guard let sentence = selectedSentence, !sentence.isEmpty else { return }
-        translationService.translate(text: sentence, serviceType: type)
-    }
-    
-    /// 获取快速翻译预览（使用词典组合）
-    func getQuickTranslationPreview() -> String? {
-        guard let sentence = selectedSentence else { return nil }
-        return translationService.quickTranslateSentence(sentence)
-    }
-    
-    /// 关闭句子翻译
-    func closeSentenceTranslation() {
-        showingSentenceTranslation = false
-        selectedSentence = nil
-        selectedSentenceRange = nil
-    }
-    
-    /// 显示翻译服务选择菜单
-    func showTranslationMenu() {
-        showingTranslationMenu = true
-    }
-
     /// 从文章中提取单词上下文
     private func extractContextForWord(_ word: String) -> String? {
         guard !content.isEmpty else { return nil }

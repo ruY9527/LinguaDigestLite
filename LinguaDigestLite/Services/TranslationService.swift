@@ -155,8 +155,15 @@ class TranslationService: NSObject {
     
     /// 检查系统翻译是否可用
     func isSystemTranslationAvailable() -> Bool {
-        // iOS 15+ 系统翻译可用
         if #available(iOS 15.0, *) {
+            return true
+        }
+        return false
+    }
+
+    /// iOS 17.4+ 支持 app 内系统翻译弹窗。
+    var supportsNativeTranslationPresentation: Bool {
+        if #available(iOS 17.4, *) {
             return true
         }
         return false
@@ -175,25 +182,5 @@ class TranslationService: NSObject {
         services.append(contentsOf: [.google, .baidu, .deepL])
         
         return services
-    }
-}
-
-// MARK: - 系统翻译菜单处理
-
-extension UITextView {
-    /// 是否可以执行翻译动作
-    func canPerformActionForTranslation(_ action: Selector, withSender sender: Any?) -> Bool {
-        if action == Selector(("translateSentence")) {
-            return selectedRange.length > 0
-        }
-        return canPerformAction(action, withSender: sender)
-    }
-
-    /// 执行翻译动作
-    func performActionForTranslation(_ action: Selector, withSender sender: Any?) {
-        if action == Selector(("translateSentence")) {
-            let selectedText = (text as NSString).substring(with: selectedRange)
-            TranslationService.shared.translateWithSystemApp(text: selectedText)
-        }
     }
 }
