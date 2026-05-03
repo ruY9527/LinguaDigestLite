@@ -37,7 +37,7 @@ struct SettingsView: View {
 
                 // 学习设置
                 learningSettingsSection
-                
+
                 // ECDICT 完整词典
                 ecdictDictionarySection
 
@@ -78,33 +78,33 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     /// 阅读设置部分
     private var readingSettingsSection: some View {
         Section(L("section.reading")) {
             // 字体大小
             VStack(alignment: .leading, spacing: 8) {
                 Text(L("setting.fontSize"))
-                
+
                 HStack {
                     Text("A")
                         .font(.caption)
-                    
+
                     Slider(value: $userSettings.readingSettings.fontSize, in: 12...28, step: 1)
-                    
+
                     Text("A")
                         .font(.title2)
                 }
-                
+
                 Text("\(Int(userSettings.readingSettings.fontSize)) pt")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
+
             // 行间距
             VStack(alignment: .leading, spacing: 8) {
                 Text(L("setting.lineSpacing"))
-                
+
                 HStack {
                     ForEach([1.0, 1.25, 1.5, 1.75, 2.0], id: \.self) { spacing in
                         Button {
@@ -124,13 +124,13 @@ struct SettingsView: View {
                     }
                 }
             }
-            
+
             // 段落间距
             Stepper(String(format: L("setting.paragraphSpacing"), Int(userSettings.readingSettings.paragraphSpacing)), value: $userSettings.readingSettings.paragraphSpacing, in: 8...24)
-            
+
             // 边距
             Stepper(String(format: L("setting.pageMargin"), Int(userSettings.readingSettings.marginSize)), value: $userSettings.readingSettings.marginSize, in: 8...32)
-            
+
             // 字体选择
             NavigationLink {
                 FontPickerView(selectedFont: $userSettings.readingSettings.fontName)
@@ -142,7 +142,7 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            
+
             // 主题选择
             NavigationLink {
                 ThemePickerView(selectedTheme: $userSettings.readingSettings.theme)
@@ -150,7 +150,7 @@ struct SettingsView: View {
                 HStack {
                     Text(L("setting.readingTheme"))
                     Spacer()
-                    
+
                     Circle()
                         .fill(Color(hex: userSettings.readingSettings.theme.backgroundColor))
                         .frame(width: 24, height: 24)
@@ -162,7 +162,7 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     /// 语音设置部分
     private var speechSettingsSection: some View {
         Section(L("section.tts")) {
@@ -176,36 +176,36 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            
+
             VStack(alignment: .leading, spacing: 8) {
                 Text(L("setting.speechRate"))
-                
+
                 HStack {
                     Image(systemName: "tortoise")
                         .foregroundColor(.gray)
-                    
+
                     Slider(value: $userSettings.readingSettings.speechRate, in: 0.3...0.8, step: 0.1)
-                    
+
                     Image(systemName: "hare")
                         .foregroundColor(.gray)
                 }
-                
+
                 Text(speechRateDescription)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
         }
     }
-    
+
     /// 学习设置部分
     private var learningSettingsSection: some View {
         Section(L("section.learning")) {
             // 自动高亮生词
             Toggle(L("setting.autoHighlight"), isOn: $userSettings.readingSettings.autoHighlightNewWords)
-            
+
             // 显示音标
             Toggle(L("setting.showPhonetic"), isOn: $userSettings.readingSettings.showPhonetic)
-            
+
             // 词汇等级
             NavigationLink {
                 VocabularyLevelPickerView(selectedLevel: $userSettings.readingSettings.vocabularyLevel)
@@ -217,7 +217,7 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            
+
             // 每日复习提醒
             Toggle(L("setting.dailyReminder"), isOn: Binding(
                 get: { userSettings.reminderSettings.dailyReviewEnabled },
@@ -245,7 +245,7 @@ struct SettingsView: View {
                     }
                 }
             ))
-            
+
             if userSettings.reminderSettings.dailyReviewEnabled {
                 // 提醒时间选择
                 DatePicker(
@@ -276,7 +276,7 @@ struct SettingsView: View {
                     ),
                     displayedComponents: [.hourAndMinute]
                 )
-                
+
                 // 显示今日待复习数量
                 HStack {
                     Text(L("setting.todayReview"))
@@ -285,7 +285,7 @@ struct SettingsView: View {
                     Text(String(format: L("setting.reviewCountSuffix"), reviewCount))
                         .foregroundColor(reviewCount > 0 ? .orange : .secondary)
                 }
-                
+
                 // 测试提醒按钮
                 Button {
                     NotificationService.shared.sendTestNotification { success in
@@ -303,7 +303,7 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     /// ECDICT 完整词典部分
     private var ecdictDictionarySection: some View {
         Section(L("section.ecdict")) {
@@ -354,7 +354,7 @@ struct SettingsView: View {
                     Text(mode.displayName).tag(mode)
                 }
             }
-            
+
             // 导入词典按钮
             Button {
                 showingDictionaryImport = true
@@ -364,7 +364,7 @@ struct SettingsView: View {
                     Text(L("action.importDict"))
                 }
             }
-            
+
             // 导出词典按钮
             Button {
                 showingExportSheet = true
@@ -375,7 +375,7 @@ struct SettingsView: View {
                 }
             }
             .disabled(DictionaryService.shared.getCustomEntryCount() == 0)
-            
+
             // 格式说明
             Button {
                 showingImportFormatGuide = true
@@ -385,7 +385,7 @@ struct SettingsView: View {
                     Text(L("action.dictFormatInfo"))
                 }
             }
-            
+
             // 清除自定义词条
             Button {
                 showingClearConfirmation = true
@@ -397,25 +397,25 @@ struct SettingsView: View {
                 .foregroundColor(.red)
             }
             .disabled(DictionaryService.shared.getCustomEntryCount() == 0)
-            
+
             // 下载示例文件
             VStack(alignment: .leading, spacing: 12) {
                 Text(L("section.downloadSample"))
                     .font(.headline)
-                
+
                 HStack(spacing: 16) {
                     Button {
                         downloadSampleFile(format: .json)
                     } label: {
                         Label("JSON", systemImage: "doc.text")
                     }
-                    
+
                     Button {
                         downloadSampleFile(format: .csv)
                     } label: {
                         Label("CSV", systemImage: "doc.text")
                     }
-                    
+
                     Button {
                         downloadSampleFile(format: .txt)
                     } label: {
@@ -425,7 +425,7 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     /// 下载示例文件
     private func downloadSampleFile(format: DictionaryFileFormat) {
         if let fileURL = DictionaryImportService.shared.generateSampleDictionary(format: format) {
@@ -434,7 +434,7 @@ struct SettingsView: View {
                 activityItems: [fileURL],
                 applicationActivities: nil
             )
-            
+
             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
                 let rootViewController = windowScene.windows.first?.rootViewController
                 rootViewController?.present(activityVC, animated: true)
@@ -451,14 +451,14 @@ struct SettingsView: View {
                 Text("1.0.0")
                     .foregroundColor(.secondary)
             }
-            
+
             HStack {
                 Text(L("setting.appName"))
                 Spacer()
                 Text("LinguaDigestLite")
                     .foregroundColor(.secondary)
             }
-            
+
             Link(destination: URL(string: "https://github.com")!) {
                 HStack {
                     Text("GitHub")
@@ -467,7 +467,7 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            
+
             Button {
                 userSettings.resetToDefaults()
             } label: {
@@ -476,7 +476,7 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     /// 字体显示名称
     private var fontDisplayName: String {
         if let fontName = userSettings.readingSettings.fontName {
@@ -496,588 +496,6 @@ struct SettingsView: View {
             return L("speed.fast")
         } else {
             return L("speed.veryFast")
-        }
-    }
-}
-
-/// 字体选择视图
-struct FontPickerView: View {
-    @Binding var selectedFont: String?
-    
-    var body: some View {
-        List {
-            ForEach(ReadingSettings.standardFonts.sorted(by: { $0.key < $1.key }), id: \.key) { font in
-                Button {
-                    selectedFont = font.value
-                } label: {
-                    HStack {
-                        if let customFontName = font.value {
-                            Text(font.key)
-                                .font(.custom(customFontName, size: 16))
-                        } else {
-                            Text(font.key)
-                                .font(.system(size: 16))
-                        }
-                        
-                        Spacer()
-                        
-                        if selectedFont == font.value {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.blue)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .navigationTitle(L("nav.selectFont"))
-    }
-}
-
-/// 主题选择视图
-struct ThemePickerView: View {
-    @Binding var selectedTheme: ReadingTheme
-    
-    var body: some View {
-        List {
-            ForEach(ReadingTheme.allCases, id: \.self) { theme in
-                Button {
-                    selectedTheme = theme
-                } label: {
-                    HStack {
-                        // 主题预览
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(hex: theme.backgroundColor))
-                            .frame(width: 40, height: 40)
-                            .overlay(
-                                Text("A")
-                                    .font(.headline)
-                                    .foregroundColor(Color(hex: theme.textColor))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray, lineWidth: 1)
-                            )
-                        
-                        Text(theme.displayName)
-                        
-                        Spacer()
-                        
-                        if selectedTheme == theme {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.blue)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .navigationTitle(L("nav.selectTheme"))
-    }
-}
-
-/// 语音选择视图
-struct VoicePickerView: View {
-    @State private var selectedVoiceIndex: Int = 0
-    
-    let voices = SpeechService.voiceOptions()
-    
-    var body: some View {
-        List {
-            ForEach(0..<voices.count, id: \.self) { index in
-                Button {
-                    selectedVoiceIndex = index
-                    // 保存语音设置
-                } label: {
-                    HStack {
-                        Text(voices[index].name)
-                        
-                        Spacer()
-                        
-                        if selectedVoiceIndex == index {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.blue)
-                        }
-                        
-                        // 试听按钮
-                        Button {
-                            SpeechService.shared.speakWord("Hello", voice: voices[index].voice)
-                        } label: {
-                            Image(systemName: "speaker.wave.3")
-                                .foregroundColor(.blue)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .navigationTitle(L("nav.selectVoice"))
-    }
-}
-
-/// 词汇等级选择视图
-struct VocabularyLevelPickerView: View {
-    @Binding var selectedLevel: VocabularyLevel
-    
-    var body: some View {
-        List {
-            ForEach(VocabularyLevel.allCases, id: \.self) { level in
-                Button {
-                    selectedLevel = level
-                } label: {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(level.displayName)
-                            
-                            Text(levelDescription(level))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Spacer()
-                        
-                        if selectedLevel == level {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.blue)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .navigationTitle(L("setting.vocabLevel"))
-    }
-    
-    /// 等级描述
-    private func levelDescription(_ level: VocabularyLevel) -> String {
-        switch level {
-        case .beginner:
-            return L("level.beginner")
-        case .elementary:
-            return L("level.elementary")
-        case .intermediate:
-            return L("level.intermediate")
-        case .advanced:
-            return L("level.advanced")
-        case .expert:
-            return L("level.expert")
-        }
-    }
-}
-
-// MARK: - 词典导入相关视图
-
-/// 词典导入弹窗
-struct DictionaryImportSheet: View {
-    let importMode: DictionaryImportMode
-    let onImportComplete: (DictionaryImportResult) -> Void
-    
-    @Environment(\.dismiss) private var dismiss
-    @State private var showingFilePicker: Bool = false
-    @State private var selectedFileURL: URL?
-    @State private var isImporting: Bool = false
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                // 说明
-                VStack(spacing: 12) {
-                    Image(systemName: "doc.badge.arrow.down")
-                        .font(.system(size: 48))
-                        .foregroundColor(.blue)
-                    
-                    Text(L("sheet.importDict"))
-                        .font(.headline)
-
-                    Text(L("sheet.importDesc"))
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, 40)
-                
-                // 导入模式说明
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(String(format: L("sheet.importModeLabel"), importMode.rawValue))
-                        .font(.headline)
-                    
-                    Text(importModeDescription(importMode))
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color(UIColor.secondarySystemBackground))
-                .cornerRadius(12)
-                .padding(.horizontal)
-                
-                // 选择文件按钮
-                Button {
-                    showingFilePicker = true
-                } label: {
-                    HStack {
-                        Image(systemName: "folder")
-                        Text(L("action.selectFile"))
-                    }
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .cornerRadius(12)
-                }
-                .padding(.horizontal)
-                
-                // 已选文件显示
-                if let fileURL = selectedFileURL {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(L("label.selectedFile"))
-                            .font(.headline)
-                        
-                        HStack {
-                            Image(systemName: "doc.text")
-                            VStack(alignment: .leading) {
-                                Text(fileURL.lastPathComponent)
-                                    .font(.subheadline)
-                                Text(fileURL.pathExtension.uppercased())
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            Spacer()
-                            
-                            Button {
-                                selectedFileURL = nil
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .padding()
-                        .background(Color(UIColor.tertiarySystemBackground))
-                        .cornerRadius(8)
-                        
-                        // 导入按钮
-                        Button {
-                            importFile(url: fileURL)
-                        } label: {
-                            HStack {
-                                if isImporting {
-                                    ProgressView()
-                                } else {
-                                    Image(systemName: "arrow.down.circle.fill")
-                                }
-                                Text(isImporting ? L("action.importing") : L("action.startImport"))
-                            }
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(isImporting ? Color.gray : Color.green)
-                            .cornerRadius(12)
-                        }
-                        .disabled(isImporting)
-                    }
-                    .padding(.horizontal)
-                }
-                
-                Spacer()
-            }
-            .navigationTitle(L("nav.importDict"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(L("common.cancel")) {
-                        dismiss()
-                    }
-                }
-            }
-            .fileImporter(
-                isPresented: $showingFilePicker,
-                allowedContentTypes: DictionaryImportService.shared.supportedTypes,
-                allowsMultipleSelection: false
-            ) { result in
-                switch result {
-                case .success(let urls):
-                    selectedFileURL = urls.first
-                case .failure(let error):
-                    print("选择文件失败: \(error)")
-                }
-            }
-        }
-    }
-    
-    /// 导入模式说明
-    private func importModeDescription(_ mode: DictionaryImportMode) -> String {
-        switch mode {
-        case .enhance:
-            return L("importMode.merge")
-        case .overwrite:
-            return L("importMode.overwrite")
-        case .addOnly:
-            return L("importMode.addOnly")
-        }
-    }
-    
-    /// 导入文件
-    private func importFile(url: URL) {
-        isImporting = true
-        
-        DictionaryImportService.shared.importDictionary(
-            from: url,
-            mode: importMode
-        ) { result in
-            isImporting = false
-            onImportComplete(result)
-            dismiss()
-        }
-    }
-}
-
-/// 词典格式说明弹窗
-struct DictionaryFormatGuideSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // JSON 格式示例
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(L("format.json"))
-                            .font(.headline)
-                            .foregroundColor(.blue)
-                        
-                        Text("""
-                        [
-                          {
-                            "word": "hello",
-                            "phonetic": "həˈləʊ",
-                            "partOfSpeech": "int.",
-                            "definition": "你好；喂",
-                            "example": "Hello, how are you?",
-                            "frequency": 5,
-                            "level": "CET4"
-                          }
-                        ]
-                        """)
-                            .font(.system(.caption, design: .monospaced))
-                            .padding()
-                            .background(Color(UIColor.secondarySystemBackground))
-                            .cornerRadius(8)
-                    }
-                    
-                    // CSV 格式示例
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(L("format.csv"))
-                            .font(.headline)
-                            .foregroundColor(.green)
-                        
-                        Text("""
-                        word,phonetic,partOfSpeech,definition,example,frequency,level
-                        hello,həˈləʊ,int.,你好；喂,Hello how are you,5,CET4
-                        """)
-                            .font(.system(.caption, design: .monospaced))
-                            .padding()
-                            .background(Color(UIColor.secondarySystemBackground))
-                            .cornerRadius(8)
-                    }
-                    
-                    // TXT 格式示例
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(L("format.txt"))
-                            .font(.headline)
-                            .foregroundColor(.orange)
-                        
-                        Text("""
-                        hello|həˈləʊ|int.|你好；喂|Hello how are you
-                        """)
-                            .font(.system(.caption, design: .monospaced))
-                            .padding()
-                            .background(Color(UIColor.secondarySystemBackground))
-                            .cornerRadius(8)
-                    }
-                    
-                    // 字段说明
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(L("section.fieldDesc"))
-                            .font(.headline)
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            fieldRow("word", L("field.required"), L("field.word"))
-                            fieldRow("phonetic", L("field.optional"), L("field.phonetic"))
-                            fieldRow("partOfSpeech", L("field.optional"), L("field.pos"))
-                            fieldRow("definition", L("field.required"), L("field.definition"))
-                            fieldRow("example", L("field.optional"), L("field.example"))
-                            fieldRow("frequency", L("field.optional"), L("field.frequency"))
-                            fieldRow("level", L("field.optional"), L("field.level"))
-                        }
-                        .padding()
-                        .background(Color(UIColor.tertiarySystemBackground))
-                        .cornerRadius(8)
-                    }
-                    
-                    // 注意事项
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(L("section.notes"))
-                            .font(.headline)
-                            .foregroundColor(.red)
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(L("note.fullDefinition"))
-                            Text(L("note.csvQuotes"))
-                            Text(L("note.txtSeparator"))
-                            Text(L("note.ipaPhonetic"))
-                            Text(L("note.largeFileWait"))
-                        }
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    }
-                }
-                .padding()
-            }
-            .navigationTitle(L("action.dictFormatInfo"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(L("common.close")) {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-    
-    private func fieldRow(_ name: String, _ required: String, _ description: String) -> some View {
-        HStack {
-            Text(name)
-                .font(.system(.subheadline, design: .monospaced))
-                .foregroundColor(.blue)
-            
-            Text(required)
-                .font(.caption)
-                .foregroundColor(required == L("field.required") ? .red : .secondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .background(required == L("field.required") ? Color.red.opacity(0.1) : Color.secondary.opacity(0.1))
-                .cornerRadius(4)
-            
-            Text(description)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            
-            Spacer()
-        }
-    }
-}
-
-/// 词典导出弹窗
-struct DictionaryExportSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedFormat: DictionaryFileFormat = .json
-    @State private var isExporting: Bool = false
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                // 说明
-                VStack(spacing: 12) {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 48))
-                        .foregroundColor(.green)
-                    
-                    Text(L("action.exportCustomDict"))
-                        .font(.headline)
-                    
-                    Text(L("sheet.exportDesc"))
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, 40)
-                
-                // 词条数量显示
-                VStack {
-                    Text(L("label.customEntryCount"))
-                        .font(.subheadline)
-                    
-                    Text(String(format: L("setting.entryCountSuffix"), DictionaryService.shared.getCustomEntryCount()))
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.blue)
-                }
-                
-                // 格式选择
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(L("label.exportFormat"))
-                        .font(.headline)
-
-                    Picker(L("setting.exportFormat"), selection: $selectedFormat) {
-                        ForEach([DictionaryFileFormat.json, .csv, .txt], id: \.self) { format in
-                            Text(format.rawValue).tag(format)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-                .padding(.horizontal)
-                
-                // 导出按钮
-                Button {
-                    exportDictionary()
-                } label: {
-                    HStack {
-                        if isExporting {
-                            ProgressView()
-                        } else {
-                            Image(systemName: "arrow.up.circle.fill")
-                        }
-                        Text(isExporting ? L("action.exporting") : L("action.exportAndShare"))
-                    }
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(isExporting ? Color.gray : Color.green)
-                    .cornerRadius(12)
-                }
-                .disabled(isExporting || DictionaryService.shared.getCustomEntryCount() == 0)
-                .padding(.horizontal)
-                
-                Spacer()
-            }
-            .navigationTitle(L("nav.exportDict"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(L("common.cancel")) {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-    
-    /// 导出词典
-    private func exportDictionary() {
-        isExporting = true
-        
-        if let fileURL = DictionaryImportService.shared.exportCustomDictionary(format: selectedFormat) {
-            isExporting = false
-            
-            // 分享文件
-            let activityVC = UIActivityViewController(
-                activityItems: [fileURL],
-                applicationActivities: nil
-            )
-            
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                let rootViewController = windowScene.windows.first?.rootViewController
-                rootViewController?.present(activityVC, animated: true) {
-                    dismiss()
-                }
-            }
-        } else {
-            isExporting = false
         }
     }
 }

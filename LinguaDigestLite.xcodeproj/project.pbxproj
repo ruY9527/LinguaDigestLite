@@ -44,6 +44,33 @@
 		L10N_STRINGS_BUILD /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = L10N_VARIANT_GROUP; };
 		SH000002 /* SQLiteHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH000001; };
 		SQL00002 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = SQL00001; };
+		A1000027 /* FeedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000028; };
+		A1000028 /* ArticleStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000029; };
+		A1000029 /* VocabularyStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000030; };
+		A1000030 /* CategoryStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000031; };
+		A1000031 /* SentenceStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000032; };
+		A1000032 /* RefreshLogStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000033; };
+		A1000033 /* HTMLEntityDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000034; };
+		A1000034 /* HTMLContentExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000035; };
+		A1000035 /* RSSParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000036; };
+		A1000036 /* ArticleReaderTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000037; };
+		A1000037 /* CategoryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000038; };
+		A1000038 /* FontPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000039; };
+		A1000039 /* ReaderTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000040; };
+		A1000040 /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000041; };
+		A1000041 /* SentenceRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000042; };
+		A1000042 /* SentenceSaveSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000043; };
+		A1000043 /* SentenceTranslationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000044; };
+		A1000044 /* SystemDictionarySheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000045; };
+		A1000045 /* ThemePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000046; };
+		A1000046 /* VocabularyLevelPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000047; };
+		A1000047 /* VocabularyRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000048; };
+		A1000048 /* VoicePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000049; };
+		A1000049 /* ReaderMetaPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000050; };
+		A1000050 /* StatItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000051; };
+		A1000051 /* DictionaryExportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000052; };
+		A1000052 /* DictionaryFormatGuideSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000053; };
+		A1000053 /* DictionaryImportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000054; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -88,6 +115,33 @@
 		SQL00001 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		L10N_EN_REF /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		L10N_ZH_REF /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		A2000028 /* FeedStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedStorage.swift; sourceTree = "<group>"; };
+		A2000029 /* ArticleStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleStorage.swift; sourceTree = "<group>"; };
+		A2000030 /* VocabularyStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularyStorage.swift; sourceTree = "<group>"; };
+		A2000031 /* CategoryStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryStorage.swift; sourceTree = "<group>"; };
+		A2000032 /* SentenceStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SentenceStorage.swift; sourceTree = "<group>"; };
+		A2000033 /* RefreshLogStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshLogStorage.swift; sourceTree = "<group>"; };
+		A2000034 /* HTMLEntityDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLEntityDecoder.swift; sourceTree = "<group>"; };
+		A2000035 /* HTMLContentExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLContentExtractor.swift; sourceTree = "<group>"; };
+		A2000036 /* RSSParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSSParser.swift; sourceTree = "<group>"; };
+		A2000037 /* ArticleReaderTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleReaderTextView.swift; sourceTree = "<group>"; };
+		A2000038 /* CategoryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryViews.swift; sourceTree = "<group>"; };
+		A2000039 /* FontPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontPickerView.swift; sourceTree = "<group>"; };
+		A2000040 /* ReaderTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderTextView.swift; sourceTree = "<group>"; };
+		A2000041 /* ReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewView.swift; sourceTree = "<group>"; };
+		A2000042 /* SentenceRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SentenceRowView.swift; sourceTree = "<group>"; };
+		A2000043 /* SentenceSaveSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SentenceSaveSheet.swift; sourceTree = "<group>"; };
+		A2000044 /* SentenceTranslationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SentenceTranslationSheet.swift; sourceTree = "<group>"; };
+		A2000045 /* SystemDictionarySheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemDictionarySheetView.swift; sourceTree = "<group>"; };
+		A2000046 /* ThemePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePickerView.swift; sourceTree = "<group>"; };
+		A2000047 /* VocabularyLevelPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularyLevelPickerView.swift; sourceTree = "<group>"; };
+		A2000048 /* VocabularyRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularyRowView.swift; sourceTree = "<group>"; };
+		A2000049 /* VoicePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePickerView.swift; sourceTree = "<group>"; };
+		A2000050 /* ReaderMetaPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderMetaPill.swift; sourceTree = "<group>"; };
+		A2000051 /* StatItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatItem.swift; sourceTree = "<group>"; };
+		A2000052 /* DictionaryExportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryExportSheet.swift; sourceTree = "<group>"; };
+		A2000053 /* DictionaryFormatGuideSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryFormatGuideSheet.swift; sourceTree = "<group>"; };
+		A2000054 /* DictionaryImportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryImportSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXVariantGroup section */
@@ -171,8 +225,44 @@
 				A2000019 /* AddFeedSheetView.swift */,
 				A2000023 /* RefreshLogView.swift */,
 				A2000027 /* SentenceDetailView.swift */,
+				A2000037 /* ArticleReaderTextView.swift */,
+				A2000038 /* CategoryViews.swift */,
+				A2000039 /* FontPickerView.swift */,
+				A2000040 /* ReaderTextView.swift */,
+				A2000041 /* ReviewView.swift */,
+				A2000042 /* SentenceRowView.swift */,
+				A2000043 /* SentenceSaveSheet.swift */,
+				A2000044 /* SentenceTranslationSheet.swift */,
+				A2000045 /* SystemDictionarySheetView.swift */,
+				A2000046 /* ThemePickerView.swift */,
+				A2000047 /* VocabularyLevelPickerView.swift */,
+				A2000048 /* VocabularyRowView.swift */,
+				A2000049 /* VoicePickerView.swift */,
+				A5000010 /* Components */,
+				A5000011 /* DictionaryImport */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		A5000010 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A2000050 /* ReaderMetaPill.swift */,
+				A2000051 /* StatItem.swift */,
+			);
+			name = Components;
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A5000011 /* DictionaryImport */ = {
+			isa = PBXGroup;
+			children = (
+				A2000052 /* DictionaryExportSheet.swift */,
+				A2000053 /* DictionaryFormatGuideSheet.swift */,
+				A2000054 /* DictionaryImportSheet.swift */,
+			);
+			name = DictionaryImport;
+			path = DictionaryImport;
 			sourceTree = "<group>";
 		};
 		A5000006 /* ViewModels */ = {
@@ -200,6 +290,15 @@
 				0ED5E3F4B02127A46B65E8E8 /* DictionaryDownloadService.swift */,
 				D353280496F1BE7EB1C13C8B /* NotificationService.swift */,
 				D0F94AC4BB654CD18FB32EF9 /* DictionaryDatabaseManager.swift */,
+				A2000028 /* FeedStorage.swift */,
+				A2000029 /* ArticleStorage.swift */,
+				A2000030 /* VocabularyStorage.swift */,
+				A2000031 /* CategoryStorage.swift */,
+				A2000032 /* SentenceStorage.swift */,
+				A2000033 /* RefreshLogStorage.swift */,
+				A2000034 /* HTMLEntityDecoder.swift */,
+				A2000035 /* HTMLContentExtractor.swift */,
+				A2000036 /* RSSParser.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -327,6 +426,33 @@
 				A1000024 /* SavedSentence.swift in Sources */,
 				A1000025 /* SentenceViewModel.swift in Sources */,
 				A1000026 /* SentenceDetailView.swift in Sources */,
+				A1000027 /* FeedStorage.swift in Sources */,
+				A1000028 /* ArticleStorage.swift in Sources */,
+				A1000029 /* VocabularyStorage.swift in Sources */,
+				A1000030 /* CategoryStorage.swift in Sources */,
+				A1000031 /* SentenceStorage.swift in Sources */,
+				A1000032 /* RefreshLogStorage.swift in Sources */,
+				A1000033 /* HTMLEntityDecoder.swift in Sources */,
+				A1000034 /* HTMLContentExtractor.swift in Sources */,
+				A1000035 /* RSSParser.swift in Sources */,
+				A1000036 /* ArticleReaderTextView.swift in Sources */,
+				A1000037 /* CategoryViews.swift in Sources */,
+				A1000038 /* FontPickerView.swift in Sources */,
+				A1000039 /* ReaderTextView.swift in Sources */,
+				A1000040 /* ReviewView.swift in Sources */,
+				A1000041 /* SentenceRowView.swift in Sources */,
+				A1000042 /* SentenceSaveSheet.swift in Sources */,
+				A1000043 /* SentenceTranslationSheet.swift in Sources */,
+				A1000044 /* SystemDictionarySheetView.swift in Sources */,
+				A1000045 /* ThemePickerView.swift in Sources */,
+				A1000046 /* VocabularyLevelPickerView.swift in Sources */,
+				A1000047 /* VocabularyRowView.swift in Sources */,
+				A1000048 /* VoicePickerView.swift in Sources */,
+				A1000049 /* ReaderMetaPill.swift in Sources */,
+				A1000050 /* StatItem.swift in Sources */,
+				A1000051 /* DictionaryExportSheet.swift in Sources */,
+				A1000052 /* DictionaryFormatGuideSheet.swift in Sources */,
+				A1000053 /* DictionaryImportSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

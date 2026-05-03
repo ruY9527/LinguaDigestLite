@@ -93,10 +93,11 @@ LinguaDigestLite/
 │   │   ├── Article.swift              # 文章模型
 │   │   ├── Feed.swift                 # RSS源模型（含备注功能）
 │   │   ├── Vocabulary.swift           # 生词模型（含SRS算法、多分类支持）
-│   │   ├── VocabularyCategory.swift  # 生词分类模型
+│   │   ├── VocabularyCategory.swift   # 生词分类模型
 │   │   ├── ReadingSettings.swift      # 阅读设置
 │   │   ├── RefreshLogEntry.swift      # 刷新日志模型
-│   │   └── DictionaryEntry.swift       # 词典条目模型
+│   │   ├── SavedSentence.swift        # 收藏句子模型
+│   │   └── DictionaryEntry.swift      # 词典条目模型
 │   ├── Views/
 │   │   ├── ArticleListView.swift      # 文章列表视图
 │   │   ├── ReaderView.swift           # 沉浸式阅读器
@@ -104,30 +105,61 @@ LinguaDigestLite/
 │   │   ├── AddFeedSheetView.swift     # 添加订阅源
 │   │   ├── VocabularyListView.swift   # 生词本（多分类管理）
 │   │   ├── SettingsView.swift         # 设置页面
-│   │   └── RefreshLogView.swift       # 刷新日志查看
+│   │   ├── RefreshLogView.swift       # 刷新日志查看
+│   │   ├── SentenceDetailView.swift   # 句子详情
+│   │   ├── ArticleReaderTextView.swift  # 阅读器文本视图（UIViewRepresentable）
+│   │   ├── ReaderTextView.swift       # 自定义UITextView（长按菜单）
+│   │   ├── CategoryViews.swift        # 分类列表与添加视图
+│   │   ├── VocabularyRowView.swift    # 生词条目行视图
+│   │   ├── SentenceRowView.swift      # 句子条目行视图
+│   │   ├── ReviewView.swift           # 闪卡复习视图
+│   │   ├── SentenceSaveSheet.swift    # 句子收藏表单
+│   │   ├── SentenceTranslationSheet.swift # 翻译服务选择
+│   │   ├── SystemDictionarySheetView.swift # 系统词典集成
+│   │   ├── FontPickerView.swift       # 字体选择器
+│   │   ├── ThemePickerView.swift      # 主题选择器
+│   │   ├── VoicePickerView.swift      # 语音选择器
+│   │   ├── VocabularyLevelPickerView.swift # 词汇等级选择器
+│   │   ├── Components/
+│   │   │   ├── ReaderMetaPill.swift   # 阅读器元数据胶囊标签
+│   │   │   └── StatItem.swift         # 统计数据展示组件
+│   │   └── DictionaryImport/
+│   │       ├── DictionaryImportSheet.swift    # 词典导入界面
+│   │       ├── DictionaryFormatGuideSheet.swift # 格式指南
+│   │       └── DictionaryExportSheet.swift    # 词典导出界面
 │   ├── ViewModels/
 │   │   ├── ArticleViewModel.swift     # 文章数据管理
-│   │   ├── FeedViewModel.swift       # RSS源数据管理
-│   │   ├── VocabularyViewModel.swift # 生词数据管理
-│   │   ├── ReaderViewModel.swift     # 阅读器状态管理
-│   │   └── TextTranslationViewModel.swift # 文本翻译状态管理
+│   │   ├── FeedViewModel.swift        # RSS源数据管理
+│   │   ├── VocabularyViewModel.swift  # 生词数据管理
+│   │   ├── ReaderViewModel.swift      # 阅读器状态管理
+│   │   ├── TextTranslationViewModel.swift # 文本翻译状态管理
+│   │   └── SentenceViewModel.swift    # 句子数据管理
 │   ├── Services/
-│   │   ├── DatabaseManager.swift           # SQLite数据库管理
-│   │   ├── FeedService.swift              # RSS解析服务
-│   │   ├── DictionaryService.swift         # ECDICT词典查询服务
+│   │   ├── DatabaseManager.swift      # SQLite数据库初始化与迁移
+│   │   ├── FeedStorage.swift          # RSS源 CRUD 操作
+│   │   ├── ArticleStorage.swift       # 文章 CRUD 操作
+│   │   ├── VocabularyStorage.swift    # 生词 CRUD 操作
+│   │   ├── CategoryStorage.swift      # 分类 CRUD 操作
+│   │   ├── SentenceStorage.swift      # 句子 CRUD 操作
+│   │   ├── RefreshLogStorage.swift    # 刷新日志 CRUD 操作
+│   │   ├── FeedService.swift          # RSS拉取服务
+│   │   ├── RSSParser.swift            # XML解析器（XMLParserDelegate）
+│   │   ├── HTMLContentExtractor.swift # HTML内容提取（BBC/Guardian/NPR等）
+│   │   ├── HTMLEntityDecoder.swift    # HTML实体解码器
+│   │   ├── DictionaryService.swift    # ECDICT词典查询服务
 │   │   ├── DictionaryDatabaseManager.swift # 词典数据库管理
 │   │   ├── DictionaryDownloadService.swift # 词典下载服务
 │   │   ├── DictionaryImportService.swift  # 词典导入服务
-│   │   ├── TranslationService.swift       # 翻译服务
-│   │   ├── NotificationService.swift      # 本地通知服务
-│   │   └── SpeechService.swift           # TTS/录音服务
+│   │   ├── TranslationService.swift   # 翻译服务
+│   │   ├── NotificationService.swift  # 本地通知服务
+│   │   └── SpeechService.swift        # TTS/录音服务
 │   ├── Utils/
-│   │   ├── SQLiteHelper.swift             # SQLite辅助工具
-│   │   └── L10n.swift                     # 国际化辅助
+│   │   ├── SQLiteHelper.swift         # SQLite辅助工具
+│   │   └── L10n.swift                 # 国际化辅助
 │   ├── Resources/
-│   │   ├── Assets.xcassets/               # 应用图标和颜色资源
-│   │   ├── en.lproj/                     # 英文本地化
-│   │   └── zh-Hans.lproj/                # 中文本地化
+│   │   ├── Assets.xcassets/           # 应用图标和颜色资源
+│   │   ├── en.lproj/                  # 英文本地化
+│   │   └── zh-Hans.lproj/             # 中文本地化
 │   ├── LinguaDigestLiteApp.swift      # 应用入口
 │   └── Info.plist                     # 应用配置
 ├── LinguaDigestLite.xcodeproj/        # Xcode项目文件
@@ -252,6 +284,26 @@ LinguaDigestLite 是一款**纯本地应用**，高度重视用户隐私：
 ---
 
 ## 最近更新
+
+### v1.4.0 (2026-05-03) - 代码架构优化
+
+对5个超大文件进行拆分重构，提升代码可维护性和可读性：
+
+| 文件 | 重构前 | 重构后 | 缩减 |
+|------|--------|--------|------|
+| SettingsView.swift | 1083行 | ~501行 | -54% |
+| FeedService.swift | 1249行 | ~203行 | -84% |
+| VocabularyListView.swift | 1502行 | ~458行 | -69% |
+| ReaderView.swift | 1685行 | ~419行 | -75% |
+| DatabaseManager.swift | 1012行 | ~230行 | -77% |
+
+**新增27个文件：**
+
+- **Services层拆分**：DatabaseManager 的 CRUD 操作按实体拆分为独立文件（FeedStorage、ArticleStorage、VocabularyStorage、CategoryStorage、SentenceStorage、RefreshLogStorage），DatabaseManager 仅保留初始化与迁移逻辑
+- **FeedService拆分**：RSS解析逻辑提取为 RSSParser，HTML内容提取独立为 HTMLContentExtractor，HTML实体解码独立为 HTMLEntityDecoder
+- **Views层拆分**：ReaderView 的 UIViewRepresentable 封装、系统词典、句子保存/翻译等Sheet拆分为独立文件；VocabularyListView 的分类管理、条目行视图、复习视图独立提取；SettingsView 的字体/主题/语音/词汇等级选择器及词典导入相关视图独立提取
+- **组件化**：新增 Components/ 目录存放可复用UI组件（StatItem、ReaderMetaPill），新增 DictionaryImport/ 目录存放词典导入相关视图
+- **Xcode项目同步**：所有新文件已添加到 .pbxproj 构建目标
 
 ### v1.3.0 (2026-05-03)
 - ✨ **原生句子翻译**：长按选中句子，调用 iOS 17.4+ 系统原生翻译（完全设备端，支持离线）
