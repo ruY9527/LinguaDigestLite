@@ -56,12 +56,14 @@ struct MainTabView: View {
     @StateObject private var articleViewModel = ArticleViewModel()
     @StateObject private var feedViewModel = FeedViewModel()
     @StateObject private var vocabularyViewModel = VocabularyViewModel()
+    @StateObject private var sentenceViewModel = SentenceViewModel()
     @State private var selectedTab = 0
+    @State private var navigateToArticleId: UUID?
 
     var body: some View {
         TabView(selection: $selectedTab) {
             // 文章列表
-            ArticleListView(viewModel: articleViewModel, feedViewModel: feedViewModel, selectedTab: $selectedTab)
+            ArticleListView(viewModel: articleViewModel, feedViewModel: feedViewModel, selectedTab: $selectedTab, navigateToArticleId: $navigateToArticleId)
                 .tabItem {
                     Label(L("tab.articles"), systemImage: "newspaper.fill")
                 }
@@ -73,9 +75,9 @@ struct MainTabView: View {
                     Label(L("tab.feeds"), systemImage: "link.circle.fill")
                 }
                 .tag(1)
-            
+
             // 生词本
-            VocabularyListView(viewModel: vocabularyViewModel)
+            VocabularyListView(viewModel: vocabularyViewModel, sentenceViewModel: sentenceViewModel, selectedTab: $selectedTab, navigateToArticleId: $navigateToArticleId)
                 .tabItem {
                     Label(L("tab.vocabulary"), systemImage: "book.fill")
                 }
@@ -87,6 +89,10 @@ struct MainTabView: View {
                     Label(L("tab.settings"), systemImage: "gearshape.fill")
                 }
                 .tag(3)
+        }
+        .onChange(of: navigateToArticleId) { articleId in
+            guard articleId != nil else { return }
+            selectedTab = 0
         }
     }
 }

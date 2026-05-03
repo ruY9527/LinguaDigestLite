@@ -7,20 +7,32 @@
 
 import SwiftUI
 
+/// 内容类型枚举
+enum VocabularyContentType: String, CaseIterable {
+    case words
+    case sentences
+}
+
 /// 生词本列表视图
 struct VocabularyListView: View {
     @ObservedObject var viewModel: VocabularyViewModel
+    @ObservedObject var sentenceViewModel: SentenceViewModel
+    @Binding var selectedTab: Int
+    @Binding var navigateToArticleId: UUID?
 
     @State private var showingReview: Bool = false
     @State private var searchText: String = ""
     @State private var showingAddCategory: Bool = false
     @State private var showingCategoryList: Bool = false
     @State private var showingFilteredList: Bool = false
+    @State private var selectedContentType: VocabularyContentType = .words
 
     var body: some View {
         NavigationStack {
             Group {
-                if viewModel.vocabulary.isEmpty && !(viewModel.selectedCategory?.isAllCategory ?? true) {
+                if selectedContentType == .sentences {
+                    sentenceContent
+                } else if viewModel.vocabulary.isEmpty && !(viewModel.selectedCategory?.isAllCategory ?? true) {
                     emptyCategoryView
                 } else if viewModel.vocabulary.isEmpty {
                     emptyStateView
@@ -29,13 +41,14 @@ struct VocabularyListView: View {
                 }
             }
             .navigationTitle(L("nav.vocabulary"))
-            .searchable(text: $searchText, prompt: L("search.vocabulary"))
+            .searchable(text: $searchText, prompt: selectedContentType == .words ? L("search.vocabulary") : L("search.sentences"))
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                 Menu {
                     ForEach(viewModel.categories, id: \.id) { category in
                         Button {
                             viewModel.selectCategory(category)
+                            sentenceViewModel.selectCategory(category)
                         } label: {
                             HStack {
                                 Image(systemName: category.icon)
@@ -70,10 +83,12 @@ struct VocabularyListView: View {
                             Image(systemName: "folder.badge.plus")
                         }
 
-                        Button {
-                            viewModel.startReview()
-                        } label: {
-                            Image(systemName: "brain.head.profile")
+                        if selectedContentType == .words {
+                            Button {
+                                viewModel.startReview()
+                            } label: {
+                                Image(systemName: "brain.head.profile")
+                            }
                         }
                     }
                 }
@@ -83,6 +98,7 @@ struct VocabularyListView: View {
             }
             .sheet(isPresented: $showingAddCategory, onDismiss: {
                 viewModel.loadCategories()
+                sentenceViewModel.loadCategories()
             }) {
                 AddCategoryView(viewModel: viewModel)
             }
@@ -94,8 +110,20 @@ struct VocabularyListView: View {
             .sheet(isPresented: $showingFilteredList) {
                 FilteredVocabularyListView(viewModel: viewModel, filterType: viewModel.filterType)
             }
+            .sheet(isPresented: $sentenceViewModel.showingEditSheet) {
+                if let sentence = sentenceViewModel.currentEditSentence {
+                    SentenceDetailView(sentence: sentence, sentenceViewModel: sentenceViewModel)
+                }
+            }
+            .onReceive(sentenceViewModel.$navigateToArticleId) { articleId in
+                if let articleId {
+                    navigateToArticleId = articleId
+                    sentenceViewModel.navigateToArticleId = nil
+                }
+            }
             .onAppear {
                 viewModel.reloadData()
+                sentenceViewModel.reloadData()
             }
         }
     }
@@ -103,6 +131,9 @@ struct VocabularyListView: View {
     /// 生词本内容
     private var vocabularyContent: some View {
         VStack(spacing: 0) {
+            // 内容类型切换
+            contentTypePicker
+
             // 当前分类标题
             if let category = viewModel.selectedCategory {
                 categoryHeaderView(category)
@@ -114,6 +145,36 @@ struct VocabularyListView: View {
             // 生词列表
             vocabularyList
         }
+    }
+
+    /// 句子内容
+    private var sentenceContent: some View {
+        VStack(spacing: 0) {
+            // 内容类型切换
+            contentTypePicker
+
+            // 当前分类标题
+            if let category = sentenceViewModel.selectedCategory {
+                sentenceCategoryHeaderView(category)
+            }
+
+            // 句子统计卡片
+            sentenceStatisticsCard
+
+            // 句子列表
+            sentenceList
+        }
+    }
+
+    /// 内容类型切换器
+    private var contentTypePicker: some View {
+        Picker(L("nav.vocabulary"), selection: $selectedContentType) {
+            Text(L("tab.words")).tag(VocabularyContentType.words)
+            Text(L("tab.sentences")).tag(VocabularyContentType.sentences)
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal)
+        .padding(.vertical, 8)
     }
 
     /// 分类头部视图
@@ -275,6 +336,120 @@ struct VocabularyListView: View {
                 .foregroundColor(.secondary)
 
             Text(L("empty.noVocabHint"))
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - 句子相关视图
+
+    /// 句子分类头部
+    private func sentenceCategoryHeaderView(_ category: VocabularyCategory) -> some View {
+        HStack {
+            Image(systemName: category.icon)
+                .foregroundColor(Color(hex: category.color))
+            Text(category.name)
+                .font(.headline)
+            if let description = category.description {
+                Text("- \(description)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+            Text(String(format: L("sentence.countSuffix"), sentenceViewModel.sentenceCount(for: category.id)))
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(Color(UIColor.secondarySystemBackground))
+    }
+
+    /// 句子统计卡片
+    private var sentenceStatisticsCard: some View {
+        HStack(spacing: 20) {
+            StatItem(title: L("stat.sentences"), value: sentenceViewModel.totalSentenceCount, color: .blue)
+            StatItem(title: L("stat.total"), value: sentenceViewModel.totalSentenceCount, color: .green)
+        }
+        .padding()
+        .background(Color(UIColor.systemBackground))
+    }
+
+    /// 句子列表
+    private var sentenceList: some View {
+        Group {
+            if filteredSentences.isEmpty {
+                sentenceEmptyStateView
+            } else {
+                List {
+                    ForEach(filteredSentences, id: \.id) { sentence in
+                        SentenceRowView(
+                            sentence: sentence,
+                            categories: getCategoriesForSentence(sentence),
+                            onSpeak: {
+                                SpeechService.shared.speak(sentence.sentence)
+                            },
+                            onJumpToSource: {
+                                navigateToArticleId = sentence.articleId
+                            }
+                        )
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                sentenceViewModel.deleteSentence(sentence)
+                            } label: {
+                                Label(L("common.delete"), systemImage: "trash")
+                            }
+                        }
+                        .swipeActions(edge: .leading) {
+                            Button {
+                                sentenceViewModel.currentEditSentence = sentence
+                                sentenceViewModel.showingEditSheet = true
+                            } label: {
+                                Label(L("common.edit"), systemImage: "pencil")
+                            }
+                            .tint(.blue)
+                        }
+                    }
+                }
+                .listStyle(.plain)
+                .refreshable {
+                    sentenceViewModel.reloadData()
+                }
+            }
+        }
+    }
+
+    /// 筛选后的句子列表
+    private var filteredSentences: [SavedSentence] {
+        if searchText.isEmpty {
+            return sentenceViewModel.sentences
+        }
+        let query = searchText.lowercased()
+        return sentenceViewModel.sentences.filter {
+            $0.sentence.lowercased().contains(query) ||
+            ($0.translation?.lowercased().contains(query) ?? false) ||
+            ($0.articleTitle?.lowercased().contains(query) ?? false)
+        }
+    }
+
+    /// 获取句子所属分类
+    private func getCategoriesForSentence(_ sentence: SavedSentence) -> [VocabularyCategory] {
+        sentenceViewModel.categories.filter { sentence.categoryIds.contains($0.id) }
+    }
+
+    /// 句子空状态
+    private var sentenceEmptyStateView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "bookmark")
+                .font(.system(size: 60))
+                .foregroundColor(.gray)
+
+            Text(L("empty.noSentences"))
+                .font(.headline)
+                .foregroundColor(.secondary)
+
+            Text(L("empty.noSentencesHint"))
                 .font(.subheadline)
                 .foregroundColor(.secondary)
         }
@@ -822,6 +997,150 @@ struct VocabularyRowView: View {
         case 5: return .blue
         default: return .gray
         }
+    }
+}
+
+/// 句子行视图
+struct SentenceRowView: View {
+    let sentence: SavedSentence
+    let categories: [VocabularyCategory]
+    let onSpeak: () -> Void
+    let onJumpToSource: () -> Void
+
+    @State private var isExpanded: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                Button {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 8) {
+                        // 句子文本
+                        Text(sentence.sentence)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                            .lineLimit(isExpanded ? nil : 3)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        // 翻译
+                        if let translation = sentence.translation, !translation.isEmpty {
+                            Text(translation)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .lineLimit(isExpanded ? nil : 2)
+                        }
+
+                        // 来源和分类
+                        HStack(spacing: 8) {
+                            if let title = sentence.articleTitle {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "doc.text")
+                                        .font(.caption2)
+                                    Text(title)
+                                        .font(.caption2)
+                                        .lineLimit(1)
+                                }
+                                .foregroundColor(.secondary)
+                            }
+
+                            if !categories.isEmpty {
+                                HStack(spacing: 4) {
+                                    ForEach(Array(categories.prefix(2)), id: \.id) { category in
+                                        Text(category.name)
+                                            .font(.caption2)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color(hex: category.color).opacity(0.15))
+                                            .foregroundColor(Color(hex: category.color))
+                                            .cornerRadius(4)
+                                    }
+                                }
+                            }
+                        }
+
+                        if !isExpanded {
+                            HStack(spacing: 6) {
+                                Image(systemName: "chevron.down.circle")
+                                    .foregroundColor(.secondary)
+                                Text(L("vocab.showDef"))
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+
+                // 发音按钮
+                Button {
+                    onSpeak()
+                } label: {
+                    Image(systemName: "speaker.wave.3.fill")
+                        .foregroundColor(.blue)
+                        .padding(8)
+                        .background(Color.blue.opacity(0.1))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
+
+            // 展开内容
+            if isExpanded {
+                Divider()
+
+                // 备注
+                if let notes = sentence.notes, !notes.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(L("sentence.notes"))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        Text(notes)
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(Color.gray.opacity(0.06))
+                    .cornerRadius(8)
+                }
+
+                // 跳转到原文按钮
+                if sentence.articleId != nil {
+                    Button {
+                        onJumpToSource()
+                    } label: {
+                        HStack {
+                            Image(systemName: "doc.text")
+                            Text(L("sentence.jumpToSource"))
+                        }
+                        .font(.subheadline)
+                        .foregroundColor(.blue)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(8)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(isExpanded ? Color.blue.opacity(0.08) : Color(UIColor.secondarySystemBackground))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(isExpanded ? Color.blue.opacity(0.18) : Color.gray.opacity(0.08), lineWidth: 1)
+                )
+        )
+        .animation(.easeInOut(duration: 0.2), value: isExpanded)
     }
 }
 

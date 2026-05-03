@@ -12,6 +12,7 @@ struct ArticleListView: View {
     @ObservedObject var viewModel: ArticleViewModel
     @ObservedObject var feedViewModel: FeedViewModel
     @Binding var selectedTab: Int
+    @Binding var navigateToArticleId: UUID?
 
     @State private var searchText: String = ""
     @State private var selectedArticle: Article?
@@ -47,6 +48,14 @@ struct ArticleListView: View {
                 if let article = selectedArticle {
                     ReaderView(article: article)
                 }
+            }
+            .onChange(of: navigateToArticleId) { articleId in
+                guard let articleId else { return }
+                if let article = viewModel.articles.first(where: { $0.id == articleId }) {
+                    selectedArticle = article
+                    showingReader = true
+                }
+                navigateToArticleId = nil
             }
         }
     }

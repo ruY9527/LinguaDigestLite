@@ -299,4 +299,6 @@ extension NotificationService: UNUserNotificationCenterDelegate {
 extension Notification.Name {
     static let didTapReviewReminder = Notification.Name("didTapReviewReminder")
     static let vocabularyDidChange = Notification.Name("vocabularyDidChange")
+    static let sentenceDidChange = Notification.Name("sentenceDidChange")
+    static let clearTextSelection = Notification.Name("clearTextSelection")
 }

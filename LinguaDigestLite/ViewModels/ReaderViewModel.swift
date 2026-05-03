@@ -38,7 +38,16 @@ class ReaderViewModel: ObservableObject {
     @Published var categories: [VocabularyCategory] = []
     @Published var selectedWordGroupedDefinitions: [(pos: String, definitions: [String])] = []
     @Published var selectedWordEnglishDefinition: String?
-    
+
+    // 句子收藏相关
+    @Published var showingSentenceSaveSheet: Bool = false
+    @Published var pendingSentence: String = ""
+    @Published var pendingTranslation: String?
+    @Published var pendingParagraphIndex: Int = 0
+    @Published var pendingSentenceRange: NSRange = NSRange()
+    @Published var selectedCategoryIdsForSentence: Set<UUID> = []
+    @Published var clearSelectionRequestID: Int = 0
+
     private let databaseManager = DatabaseManager.shared
     private let feedService = FeedService.shared
     private let dictionaryService = DictionaryService.shared
@@ -48,9 +57,17 @@ class ReaderViewModel: ObservableObject {
     init(article: Article) {
         self.article = article
         self.isFavorite = article.isFavorite
-        
+
         loadContent()
         loadCategories()
+
+        // 监听清除选中通知
+        NotificationCenter.default.publisher(for: .clearTextSelection)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.clearSelectionRequestID += 1
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - 文章内容
@@ -296,6 +313,61 @@ class ReaderViewModel: ObservableObject {
 
     var selectedCategoriesForWord: [VocabularyCategory] {
         selectableCategoriesForWord.filter { selectedCategoryIdsForWord.contains($0.id) }
+    }
+
+    // MARK: - 句子收藏
+
+    /// 开始收藏句子流程
+    func saveSentence(_ sentence: String, paragraphIndex: Int, range: NSRange) {
+        pendingSentence = sentence
+        pendingParagraphIndex = paragraphIndex
+        pendingSentenceRange = range
+        selectedCategoryIdsForSentence = []
+
+        // 自动翻译
+        pendingTranslation = TranslationService.shared.quickTranslateSentence(sentence)
+
+        showingSentenceSaveSheet = true
+    }
+
+    /// 确认保存句子
+    func confirmSaveSentence(translation: String?, notes: String?, categoryIds: [UUID]) {
+        let savedSentence = SavedSentence(
+            sentence: pendingSentence,
+            translation: translation,
+            notes: notes,
+            articleId: article.id,
+            articleTitle: article.title,
+            paragraphIndex: pendingParagraphIndex,
+            charOffset: pendingSentenceRange.location,
+            source: sourceName,
+            categoryIds: categoryIds
+        )
+        _ = databaseManager.addSentence(savedSentence)
+        cancelSaveSentence()
+    }
+
+    /// 取消收藏句子
+    func cancelSaveSentence() {
+        showingSentenceSaveSheet = false
+        pendingSentence = ""
+        pendingTranslation = nil
+        pendingParagraphIndex = 0
+        pendingSentenceRange = NSRange()
+        selectedCategoryIdsForSentence = []
+    }
+
+    func toggleCategorySelectionForSentence(_ category: VocabularyCategory) {
+        guard !category.isAllCategory else { return }
+        if selectedCategoryIdsForSentence.contains(category.id) {
+            selectedCategoryIdsForSentence.remove(category.id)
+        } else {
+            selectedCategoryIdsForSentence.insert(category.id)
+        }
+    }
+
+    func isCategorySelectedForSentence(_ category: VocabularyCategory) -> Bool {
+        selectedCategoryIdsForSentence.contains(category.id)
     }
 
     // MARK: - 文章信息

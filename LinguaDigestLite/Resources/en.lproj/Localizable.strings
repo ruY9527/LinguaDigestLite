@@ -5,6 +5,7 @@
 "common.ok" = "OK";
 "common.cancel" = "Cancel";
 "common.close" = "Close";
+"common.copy" = "Copy";
 "common.done" = "Done";
 "common.delete" = "Delete";
 "common.clear" = "Clear";
@@ -441,3 +442,28 @@
 /* === Import Detail === */
 "import.resultDetail" = "Imported! Total %1$d entries: %2$d new, %3$d updated, %4$d skipped";
 "import.failedDetail" = "Import failed: %@";
+
+/* === Saved Sentences === */
+"action.saveSentence" = "Save Sentence";
+"action.save" = "Save";
+"tab.words" = "Words";
+"tab.sentences" = "Sentences";
+"nav.sentences" = "Saved Sentences";
+"nav.sentenceDetail" = "Sentence Detail";
+"empty.noSentences" = "No Saved Sentences";
+"empty.noSentencesHint" = "Long-press a sentence while reading to save it";
+"empty.noSentencesInCategory" = "No sentences in this category";
+"sentence.saved" = "Sentence saved";
+"sentence.notes" = "Notes";
+"sentence.notesPlaceholder" = "Add notes (optional)";
+"sentence.source" = "Source Article";
+"sentence.jumpToSource" = "Jump to Source";
+"sentence.translation" = "Translation";
+"sentence.translationPlaceholder" = "Translation (auto-generated)";
+"sentence.save" = "Save";
+"sentence.savedToast" = "Sentence saved to vocabulary tab";
+"stat.sentences" = "Sentences";
+"sentence.countSuffix" = "%d sentences";
+"search.sentences" = "Search sentences";
+"sentence.createdAt" = "Saved at";
+"empty.noCategory" = "No category";

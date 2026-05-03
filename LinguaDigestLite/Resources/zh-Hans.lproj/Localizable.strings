@@ -5,6 +5,7 @@
 "common.ok" = "确定";
 "common.cancel" = "取消";
 "common.close" = "关闭";
+"common.copy" = "拷贝";
 "common.done" = "完成";
 "common.delete" = "删除";
 "common.clear" = "清除";
@@ -441,3 +442,28 @@
 /* === 导入详情 === */
 "import.resultDetail" = "导入成功！共处理 %1$d 条，新增 %2$d 条，更新 %3$d 条，跳过 %4$d 条";
 "import.failedDetail" = "导入失败：%@";
+
+/* === 收藏句子 === */
+"action.saveSentence" = "收藏句子";
+"action.save" = "收藏";
+"tab.words" = "单词";
+"tab.sentences" = "句子";
+"nav.sentences" = "收藏句子";
+"nav.sentenceDetail" = "句子详情";
+"empty.noSentences" = "暂无收藏句子";
+"empty.noSentencesHint" = "阅读时长按句子即可收藏";
+"empty.noSentencesInCategory" = "该分类暂无句子";
+"sentence.saved" = "句子已收藏";
+"sentence.notes" = "备注";
+"sentence.notesPlaceholder" = "添加备注（可选）";
+"sentence.source" = "来源文章";
+"sentence.jumpToSource" = "跳转到原文";
+"sentence.translation" = "翻译";
+"sentence.translationPlaceholder" = "翻译（自动生成）";
+"sentence.save" = "保存";
+"sentence.savedToast" = "句子已收藏到生词本";
+"stat.sentences" = "句子数";
+"sentence.countSuffix" = "%d个句子";
+"search.sentences" = "搜索句子";
+"sentence.createdAt" = "收藏时间";
+"empty.noCategory" = "暂无分类";

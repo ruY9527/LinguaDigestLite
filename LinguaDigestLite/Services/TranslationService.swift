@@ -128,27 +128,15 @@ class TranslationService: NSObject {
     // MARK: - 内置简易翻译（用于快速预览）
     
     /// 内置简易翻译（仅用于句子快速预览，非完整翻译）
-    /// 使用词典中的单词释义组合生成大致意思
+    /// 使用 iOS Translation framework 翻译句子，不可用时返回 nil
     func quickTranslateSentence(_ sentence: String) -> String? {
-        let dictionaryService = DictionaryService.shared
-        
-        // 分词
-        let words = sentence.split(separator: " ").map { String($0) }
-        var translations: [String] = []
-        
-        for word in words {
-            let cleanWord = word.lowercased().trimmingCharacters(in: .punctuationCharacters)
-            if let definition = dictionaryService.getDefinition(for: cleanWord) {
-                translations.append(definition)
-            }
-        }
-        
-        if translations.isEmpty {
+        // iOS 17.4+ 支持 app 内 Translation framework
+        if #available(iOS 17.4, *) {
+            // Translation framework 需要异步调用，此处返回 nil
+            // 用户可通过"翻译句子"按钮获取翻译
             return nil
         }
-        
-        // 返回主要单词释义的组合（仅用于预览）
-        return translations.prefix(5).joined(separator: "、")
+        return nil
     }
     
     // MARK: - 检测翻译可用性

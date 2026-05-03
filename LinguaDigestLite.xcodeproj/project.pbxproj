@@ -30,6 +30,9 @@
 		A1000021 /* RefreshLogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000022; };
 		A1000022 /* RefreshLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000023; };
 		A1000023 /* TextTranslationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000024; };
+		A1000024 /* SavedSentence.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000025; };
+		A1000025 /* SentenceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000026; };
+		A1000026 /* SentenceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000027; };
 		74669B16947CCE2A92F0BD69 /* TranslationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516F0788A9C6B3B5AB0F8316 /* TranslationService.swift */; };
 		B2D0B39EAEE53CCDBF24756 /* DictionaryImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F19285151B423B65B76402 /* DictionaryImportService.swift */; };
 		0E1B995485C170F8F5145E3 /* DictionaryDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ED5E3F4B02127A46B65E8E8 /* DictionaryDownloadService.swift */; };
@@ -67,6 +70,9 @@
 		A2000018 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A2000021 /* ReaderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderViewModel.swift; sourceTree = "<group>"; };
 		A2000024 /* TextTranslationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextTranslationViewModel.swift; sourceTree = "<group>"; };
+		A2000025 /* SavedSentence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedSentence.swift; sourceTree = "<group>"; };
+		A2000026 /* SentenceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SentenceViewModel.swift; sourceTree = "<group>"; };
+		A2000027 /* SentenceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SentenceDetailView.swift; sourceTree = "<group>"; };
 		A3000001 /* LinguaDigestLite.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LinguaDigestLite.app; sourceTree = BUILT_PRODUCTS_DIR; };
 
 		516F0788A9C6B3B5AB0F8316 /* TranslationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationService.swift; sourceTree = "<group>"; };
@@ -149,6 +155,7 @@
 				A2000010 /* ReadingSettings.swift */,
 				BB2C3D4E5F6A7B8C9D0E1F2A /* DictionaryEntry.swift */,
 				A2000022 /* RefreshLogEntry.swift */,
+				A2000025 /* SavedSentence.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -163,6 +170,7 @@
 				A2000006 /* SettingsView.swift */,
 				A2000019 /* AddFeedSheetView.swift */,
 				A2000023 /* RefreshLogView.swift */,
+				A2000027 /* SentenceDetailView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -175,6 +183,7 @@
 				A2000017 /* VocabularyViewModel.swift */,
 				A2000021 /* ReaderViewModel.swift */,
 				A2000024 /* TextTranslationViewModel.swift */,
+				A2000026 /* SentenceViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -315,6 +324,9 @@
 				A1000022 /* RefreshLogView.swift in Sources */,
 				A1000023 /* TextTranslationViewModel.swift in Sources */,
 				L10N_BUILD_FILE /* L10n.swift in Sources */,
+				A1000024 /* SavedSentence.swift in Sources */,
+				A1000025 /* SentenceViewModel.swift in Sources */,
+				A1000026 /* SentenceDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

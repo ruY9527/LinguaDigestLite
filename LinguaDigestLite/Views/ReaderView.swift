@@ -121,6 +121,9 @@ struct ReaderView: View {
             }) {
                 SentenceTranslationSheet(viewModel: textTranslationViewModel)
             }
+            .sheet(isPresented: $viewModel.showingSentenceSaveSheet) {
+                SentenceSaveSheet(viewModel: viewModel)
+            }
         }
     }
 
@@ -258,9 +261,12 @@ struct ReaderView: View {
             onCloseWordDefinition: {
                 viewModel.closeWordDefinition()
             },
-            clearSelectionRequestID: textTranslationViewModel.clearSelectionRequestID,
+            clearSelectionRequestID: textTranslationViewModel.clearSelectionRequestID + viewModel.clearSelectionRequestID,
             onTranslateSelection: { text, range in
                 textTranslationViewModel.requestTranslation(for: text, range: range)
+            },
+            onSaveSentence: { text, range, paragraphIndex in
+                viewModel.saveSentence(text, paragraphIndex: paragraphIndex, range: range)
             }
         )
         .padding(20)
@@ -708,30 +714,79 @@ struct ReaderMetaPill: View {
 
 final class ReaderTextView: UITextView {
     var onTranslateSelectedText: ((String, NSRange) -> Void)?
+    var onSaveSentence: ((String, NSRange) -> Void)?
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
         UIMenuController.shared.menuItems = [
             UIMenuItem(title: L("action.translateSentence"), action: #selector(translateSelectedText(_:))),
+            UIMenuItem(title: L("action.save"), action: #selector(saveSelectedSentence(_:))),
             UIMenuItem(title: L("action.clearSelection"), action: #selector(clearTextSelection(_:)))
         ]
     }
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
         if action == #selector(translateSelectedText(_:)) ||
+            action == #selector(saveSelectedSentence(_:)) ||
             action == #selector(clearTextSelection(_:)) {
             return selectedRange.length > 0
+        }
+        // 隐藏系统"查询/定义/翻译"菜单项
+        let selName = NSStringFromSelector(action).lowercased()
+        if selName.contains("lookup") || selName.contains("define") || selName.contains("_share") || selName.contains("_translate") {
+            return false
         }
         return super.canPerformAction(action, withSender: sender)
     }
 
     @available(iOS 16.0, *)
     override func editMenu(for textRange: UITextRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        // 过滤掉系统"查询/翻译"菜单项（UIAction 和 UIMenu 子菜单）
+        func shouldKeep(_ element: UIMenuElement) -> Bool {
+            let blocked = ["look up", "lookup", "查询", "define", "translate", "翻译"]
+            if let uiAction = element as? UIAction {
+                let title = uiAction.title.lowercased()
+                return !blocked.contains { title.contains($0) }
+            }
+            if let menu = element as? UIMenu {
+                let title = menu.title.lowercased()
+                if blocked.contains(where: { title.contains($0) }) {
+                    return false
+                }
+                let filteredChildren = menu.children.filter { shouldKeep($0) }
+                return !filteredChildren.isEmpty
+            }
+            return true
+        }
+
+        // 过滤掉系统"拷贝"，用自定义替代（拷贝后自动取消选中）
+        let filteredActions = suggestedActions.filter { shouldKeep($0) }.compactMap { element -> UIMenuElement? in
+            if let action = element as? UIAction {
+                let title = action.title.lowercased()
+                if title.contains("copy") || title.contains("拷贝") || title.contains("复制") { return nil }
+            }
+            return element
+        }
+
+        let copyAction = UIAction(
+            title: L("common.copy"),
+            image: UIImage(systemName: "doc.on.doc")
+        ) { [weak self] _ in
+            self?.copyAndClearSelection()
+        }
+
         let translateAction = UIAction(
             title: L("action.translateSentence"),
             image: UIImage(systemName: "character.bubble")
         ) { [weak self] _ in
             self?.translateSelectedText(nil)
+        }
+
+        let saveSentenceAction = UIAction(
+            title: L("action.save"),
+            image: UIImage(systemName: "bookmark.fill")
+        ) { [weak self] _ in
+            self?.saveSelectedSentence(nil)
         }
 
         let clearSelectionAction = UIAction(
@@ -741,7 +796,7 @@ final class ReaderTextView: UITextView {
             self?.clearTextSelection(nil)
         }
 
-        return UIMenu(children: suggestedActions + [translateAction, clearSelectionAction])
+        return UIMenu(children: filteredActions + [copyAction, translateAction, saveSentenceAction, clearSelectionAction])
     }
 
     @objc func translateSelectedText(_ sender: Any?) {
@@ -752,10 +807,28 @@ final class ReaderTextView: UITextView {
         onTranslateSelectedText?(selectedText, selectedRange)
     }
 
+    @objc func saveSelectedSentence(_ sender: Any?) {
+        guard selectedRange.length > 0 else { return }
+        let sourceText = attributedText?.string ?? text ?? ""
+        let selectedText = (sourceText as NSString).substring(with: selectedRange)
+        onSaveSentence?(selectedText, selectedRange)
+    }
+
     @objc func clearTextSelection(_ sender: Any?) {
         selectedRange = NSRange(location: 0, length: 0)
         resignFirstResponder()
         UIMenuController.shared.hideMenu()
+    }
+
+    func copyAndClearSelection() {
+        guard selectedRange.length > 0 else { return }
+        let sourceText = attributedText?.string ?? text ?? ""
+        let selectedText = (sourceText as NSString).substring(with: selectedRange)
+        UIPasteboard.general.string = selectedText
+        // 延迟到下一个 run loop 执行，避免系统在 action 结束后恢复选区
+        DispatchQueue.main.async { [weak self] in
+            self?.selectedRange = NSRange(location: 0, length: 0)
+        }
     }
 }
 
@@ -769,6 +842,7 @@ struct ArticleReaderTextView: UIViewRepresentable {
     let onCloseWordDefinition: () -> Void
     let clearSelectionRequestID: Int
     let onTranslateSelection: (String, NSRange) -> Void
+    let onSaveSentence: (String, NSRange, Int) -> Void
 
     func makeUIView(context: Context) -> UITextView {
         let textView = ReaderTextView()
@@ -782,6 +856,12 @@ struct ArticleReaderTextView: UIViewRepresentable {
 
         textView.attributedText = buildFullText()
         textView.onTranslateSelectedText = onTranslateSelection
+        let content = self.content
+        let onSaveSentence = self.onSaveSentence
+        textView.onSaveSentence = { text, range in
+            let paragraphIndex = self.paragraphIndexForCharacterOffset(range.location, in: content)
+            onSaveSentence(text, range, paragraphIndex)
+        }
 
         // 添加双击手势识别器（查单词）
         let doubleTapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleDoubleTap(_:)))
@@ -915,6 +995,21 @@ struct ArticleReaderTextView: UIViewRepresentable {
         }
         
         return result
+    }
+
+    /// 根据字符偏移量计算所在段落索引
+    private func paragraphIndexForCharacterOffset(_ offset: Int, in text: String) -> Int {
+        let paragraphs = splitIntoParagraphs(text)
+        var cumulativeOffset = 0
+        for (index, paragraph) in paragraphs.enumerated() {
+            let paragraphLength = paragraph.count
+            if offset < cumulativeOffset + paragraphLength {
+                return index
+            }
+            // +2 for "\n\n" separator between paragraphs
+            cumulativeOffset += paragraphLength + (index < paragraphs.count - 1 ? 2 : 0)
+        }
+        return max(0, paragraphs.count - 1)
     }
 
     class Coordinator: NSObject {
@@ -1287,6 +1382,151 @@ private final class DictionaryContainerViewController: UIViewController {
 
         controller.didMove(toParent: self)
         dictionaryController = controller
+    }
+}
+
+// MARK: - 句子收藏弹窗
+
+private struct SentenceSaveSheet: View {
+    @ObservedObject var viewModel: ReaderViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var editableTranslation: String = ""
+    @State private var editableNotes: String = ""
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                // 可滚动内容区
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // 原文
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(L("sheet.originalText"))
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            Text(viewModel.pendingSentence)
+                                .font(.body)
+                                .foregroundColor(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(12)
+                                .background(Color(UIColor.secondarySystemBackground))
+                                .cornerRadius(10)
+                        }
+
+                        // 翻译
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(L("sentence.translation"))
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            TextField(L("sentence.translationPlaceholder"), text: $editableTranslation, axis: .vertical)
+                                .lineLimit(2...4)
+                                .padding(10)
+                                .background(Color(UIColor.tertiarySystemBackground))
+                                .cornerRadius(10)
+                        }
+
+                        // 备注
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(L("sentence.notes"))
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            TextField(L("sentence.notesPlaceholder"), text: $editableNotes, axis: .vertical)
+                                .lineLimit(1...3)
+                                .padding(10)
+                                .background(Color(UIColor.tertiarySystemBackground))
+                                .cornerRadius(10)
+                        }
+
+                        // 分类
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(L("section.addToCategory"))
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(viewModel.selectableCategoriesForWord, id: \.id) { category in
+                                        Button {
+                                            viewModel.toggleCategorySelectionForSentence(category)
+                                        } label: {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: category.icon)
+                                                    .font(.caption2)
+                                                Text(category.name)
+                                                    .font(.caption)
+                                                if viewModel.isCategorySelectedForSentence(category) {
+                                                    Image(systemName: "checkmark.circle.fill")
+                                                        .font(.caption2)
+                                                }
+                                            }
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .background(
+                                                viewModel.isCategorySelectedForSentence(category)
+                                                    ? Color(hex: category.color)
+                                                    : Color(hex: category.color).opacity(0.2)
+                                            )
+                                            .foregroundColor(
+                                                viewModel.isCategorySelectedForSentence(category)
+                                                    ? .white
+                                                    : Color(hex: category.color)
+                                            )
+                                            .cornerRadius(8)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
+                    .padding(.bottom, 8)
+                }
+
+                // 保存按钮（固定在底部）
+                Button {
+                    viewModel.confirmSaveSentence(
+                        translation: editableTranslation.isEmpty ? nil : editableTranslation,
+                        notes: editableNotes.isEmpty ? nil : editableNotes,
+                        categoryIds: Array(viewModel.selectedCategoryIdsForSentence)
+                    )
+                    dismiss()
+                } label: {
+                    HStack {
+                        Image(systemName: "bookmark.fill")
+                        Text(L("sentence.save"))
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.blue)
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(Color(UIColor.systemBackground))
+            }
+            .navigationTitle(L("action.saveSentence"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(L("common.cancel")) {
+                        viewModel.cancelSaveSentence()
+                        dismiss()
+                    }
+                }
+            }
+            .onAppear {
+                editableTranslation = viewModel.pendingTranslation ?? ""
+            }
+            .onDisappear {
+                NotificationCenter.default.post(name: .clearTextSelection, object: nil)
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 }
 
